@@ -1,0 +1,18 @@
+body {
+  font-family:monospace;
+  text-align:center;
+  font-size: 2vw;
+
+  height: 100vh;
+
+  /* flex */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+a{
+  display:inline;
+  text-decoration: none;
+  color:#008b8b
+}
