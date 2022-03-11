@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Fines that scale with income</title>
+        <link rel="stylesheet" href="../assets/fonts.css">
+        <link rel="stylesheet" href="../assets/graphite.css">
+        <link rel="stylesheet" href="../assets/pygments.css">
+        
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script>
+
+       <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+
+        
+        
+    </head>
+    <body class="node-economics-scaling-fines node-economics node">
+        <header class="masthead">
+            <h1><a href="../index.html">Sam's blog</a></h1>
+            
+                <p class="tagline">Assorted ideas, thoughts and considerations</p>
+            
+            
+            <nav class="menu">
+                <input id="menu-check" type="checkbox"/>
+                <label id="menu-label" for="menu-check" class="unselectable">
+                    <span class="icon close-icon">✕</span>
+                    <span class="icon open-icon">☰</span>
+                    <span class="text">Menu</span>
+                </label>
+                <ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../economics.html">Economics</a></li>
+</ul>
+            </nav>
+        </header>
+        <article class="main">
+            <header class="title">
+                <h1>Fines that scale with income</h1>
+                
+                <hr>
+            </header>
+            <p>Around the world, various actions are punishable by fines. One way to think about fines is to see them as a tool to disincentivise behaviour that presents a social cost that may not have been priced in by the agent.</p>
+<p>One criticism of the use of fines is that for people with a lot of money, fines will not have an effect and that it creates a system that only punishes people without a lot of money.</p>
+<p>As an example, issuing a £500 fine to somebody earning £500 a week will have more of an impact to the life of that person than the issuance of a fine of the same amount to somebody else who earns £1,500 a week.</p>
+<h1>Introducing extreme examples</h1>
+<p>Thinking in yearly terms, an extreme example would be a fine of £10,000 being issued to somebody earning £20,000 each year and somebody earning £40,000 each year. The effect here isn't the same.</p>
+<p>One response to this issue is the introduction of fines that are given as a percentage of income. So for example, a fine could be listed as 50% of yearly income. In this scenario, somebody earning £20,000 would lose £10,000 and somebody earning £40,000 would lose £20,000. Looking back on this retrospectively, this works quite well when factoring for larger incomes and this system is quite simple with respect to calculating fines. It also has the upside of not requiring several equations to derive.</p>
+<p>Alas, I was too eager and before I had even begun to consider that fines that are calculated as a percentage of income could be sufficient, I had already began investigating something else.</p>
+<h1>Formalising impact</h1>
+<p>In nominal money-terms, when using percentages of income to determine fine amounts, the impact could be considered "the same". However, for one example, Sombody earning £14,000 losing half of their yearly income could leave them struggling to live whereas for other people earning more, this isn't the case.</p>
+<p>The extra value that is added by money or alternatively, the relative usefulness of an extra unit of currency is a decreasing function of income. Put in other words, the marginal utility of money gets smaller as your income increases. Equivalently, money means more to those who have less of it.</p>
+<p>If the utility gained by holding a certain amount of money were to be represented by a function, the above implies this function would be concave. Thinking in terms of utility, taking percentages of income would only main the same impact across income groups if utility were linear which isn't normally the case. We can do better.</p>
+<p>The goal of a new fine system would be to ensure the amount of utility lost is the same across income groups.</p>
+<p>Taking the utility \(U(x)\) from holding \(x\) units of currency to be the following</p>
+<p>$$U(x) = \ln x$$</p>
+<p>Allowing \(F(x)\) to be the fine issued to somebody who holds \(x\) units of currency, the loss in utility or <em>impact</em>, \(I(x)\) is</p>
+<p>$$
+\begin{align*}
+  I(x) &amp;= U(x) - U(x - F(x)) \\
+    &amp;= \ln x - \ln (x - F(x))
+\end{align*}
+$$</p>
+<p>Since the goal is for \(I(x)\) to be constant, \(\frac{dI}{dx} = 0\)</p>
+<p>$$
+\begin{align*}
+  \frac{dI}{dx} &amp;= 0 \\
+  \frac{1}{x} - \frac{1 - F'(x)}{x - F(x)} &amp;= 0 \\
+  \frac{x - F(x)}{x} -(1 - F'(x)) &amp;= 0 \\
+  \frac{x - F(x)}{x} &amp;= (1 - F'(x)) \\
+  x - F(x) &amp;= x(1 - F'(x)) \\
+  x - F(x) &amp;= x - xF'(x) \\
+  F(x) &amp;= xF'(x) \\
+  \frac{F(x)}{F'(x)} &amp;= x \\
+\end{align*}
+$$</p>
+<p>This is an ODE on F and in fact gives the solution \(F(x) = cx\) for some constant \(c\), this is exactly the same as taking a percentage of income to determine the amount for a fine.</p>
+<h1>What went wrong?</h1>
+<p>All of this work, just to get to what we already had in the beginning? What went wrong?</p>
+<p>I asserted that the utility function for money is \(U(x) = \ln x\), which isn't accurate. \(\ln x\) is the special case of the isoelastic utility function as elasticity tends to 1.</p>
+<p>The isoelastic utility funtion takes the form of</p>
+<p>$$ U(x) = \frac{c^{1 - \sigma}}{1 - \sigma}$$</p>
+<p>Impact is thus</p>
+<p>$$
+\begin{align*}
+  I(x) &amp;= U(x) - U(x - F(x)) \\
+    &amp;= \frac{x^{1 - \sigma} - (x - F(x))^{1 - \sigma}}{1 - \sigma} \\
+    &amp;= \frac{1}{\sigma} (x^{1 - \sigma} - (x - F(x))^{1 - \sigma})
+\end{align*}
+$$</p>
+<p>Setting impact as constant</p>
+<p>$$
+\begin{align*}
+  \frac{dI}{dx} &amp;= 0 \\
+  \frac{1}{\sigma}\left( (1-\sigma)x^{-\sigma} - (1-\sigma)\left(1 - F'(x)\right)\left(x-F(x)\right)^{-\sigma} \right) &amp;= 0\\
+  \frac{1 - \sigma}{\sigma}\left( x^{-\sigma} - \left(1 - F'(x)\right)\left(x-F(x)\right)^{-\sigma} \right) &amp;= 0\\
+  x^{-\sigma} - \left(1 - F'(x)\right)\left(x-F(x)\right)^{-\sigma}&amp;= 0
+\end{align*}
+$$</p>
+<p>Another ODE, this time the solution is non-trivial. It can, however, be evaluated numerically. </p>
+<p>$$
+\begin{align*}
+  x^{-\sigma} - \left(1 - F'(x)\right)\left(x-F(x)\right)^{-\sigma}&amp;= 0\\
+  \left(1 - F'(x)\right)\left(x-F(x)\right)^{-\sigma} &amp;= x^{-\sigma} \\
+  1 - F'(x) &amp;= \frac{x^{-\sigma}}{\left(x-F(x)\right)^{-\sigma}} \\
+  F'(x) &amp;= 1 - \frac{x^{-\sigma}}{\left(x-F(x)\right)^{-\sigma}} \\
+\end{align*}
+$$</p>
+<script>
+h = 0.001
+sigma = 1.2
+xs = [1]
+ys = [0.5]
+
+function fd(x, y) {
+  return 1 - (x**(-sigma) / (x - y)**(-sigma))
+}
+
+for (var i=1; xs[i-1]<100; i += 1){
+  xs.push(xs[i-1] + h)
+}
+
+for (var i=1; i<xs.length;i++) {
+  ys.push(ys[i-1] + h*fd(xs[i-1], ys[i-1]))
+}
+
+function f(x){
+  return ys[Math.floor((x - 1)/0.001)]
+}
+
+</script>
+
+<p>\(\sigma\) requires empirical calibration and the boundary conditions of the ODE correspond to how severe or impactful the fine should be.</p>
+<p>For \(\sigma = 1.2\) and with boundary conditions specifying somebody earning £1,000 a year pays 50% of the income in fines (yikes!) the numerically evaluated curve for the appropriate fine as a percentage of income looks as follows.</p>
+<div id="graph"></div>
+
+<script>
+
+let contentsBounds = document.body.getBoundingClientRect();
+let width = 800;
+let height = 500;
+let ratio = contentsBounds.width / width;
+width *= ratio;
+height *= ratio;
+
+functionPlot({
+  target: "#graph",
+  width,
+  height,
+  yAxis: {
+    domain: [0, 100],
+    label: "Proposed fine (%)"
+  },
+  xAxis: {
+    domain: [1, 100],
+    label: "Annual income (£k pounds)"
+  },
+  title: "Proposed fine as a proportion of income",
+  grid: true,
+  data: [
+    {
+      graphType: 'polyline',
+      fn: function(scope){
+        return 100*f(scope.x)/scope.x
+      },
+    }
+  ]
+});
+</script>
+
+<h1>Wealth</h1>
+        </article>
+        
+    </body>
+</html>
