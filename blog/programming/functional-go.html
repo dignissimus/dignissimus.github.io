@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Sam's blog</title>
+        <link rel="stylesheet" href="../assets/fonts.css">
+        <link rel="stylesheet" href="../assets/graphite.css">
+        <link rel="stylesheet" href="../assets/pygments.css">
+        
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script>
+
+       <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+
+        
+        
+    </head>
+    <body class="node-programming-functional-go node-programming node">
+        <header class="masthead">
+            <h1><a href="../index.html">Sam's blog</a></h1>
+            
+                <p class="tagline">Assorted ideas, thoughts and considerations</p>
+            
+            
+            <nav class="menu">
+                <input id="menu-check" type="checkbox"/>
+                <label id="menu-label" for="menu-check" class="unselectable">
+                    <span class="icon close-icon">✕</span>
+                    <span class="icon open-icon">☰</span>
+                    <span class="text">Menu</span>
+                </label>
+                <ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../programming.html">Programming</a></li>
+<li><a href="../economics.html">Economics</a></li>
+</ul>
+            </nav>
+        </header>
+        <article class="main">
+            <header class="title">
+                <h1></h1>
+                
+                <hr>
+            </header>
+            <p>
+&mdash;
+title: Functional Programming in Go
+subtitle: Or lack thereof
+date: 2022-06-28
+----
+</p>
+<p>
+Today I began learning Go today for work. I was relatively disappointed that it doesn't have some basic higher order functions built into the language.
+</p>
+<p>
+I wrote something along the following lines
+</p>
+<pre class="lang-go pygments" data-lang="go">
+</pre>
+<p>
+package main
+</p>
+<p>
+import (
+    "fmt"
+)
+</p>
+<p>
+func main() {
+    for index, value := range os.Args {
+        fmt.Printf("Argument %d:\t%s\n", index, value)
+    }
+}
+</p>
+<p>
+I thought I'd have preferred to have written the following
+</p>
+<pre class="lang-go pygments" data-lang="go">
+<span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;strings&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;os&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">type</span><span class="w"> </span><span class="nx">Pair</span><span class="p">[</span><span class="nx">T</span><span class="p">,</span><span class="w"> </span><span class="nx">V</span><span class="w"> </span><span class="nx">any</span><span class="p">]</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">T</span><span class="w"> </span><span class="nx">first</span><span class="w"></span>
+<span class="w">    </span><span class="nx">V</span><span class="w"> </span><span class="nx">second</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">Enumerate</span><span class="p">[</span><span class="nx">T</span><span class="w"> </span><span class="nx">any</span><span class="p">](</span><span class="nx">xs</span><span class="w"> </span><span class="p">[]</span><span class="nx">T</span><span class="p">)</span><span class="w"> </span><span class="p">[]</span><span class="nx">Pair</span><span class="p">[</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="nx">T</span><span class="p">]</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">ys</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nb">make</span><span class="p">([]</span><span class="nx">Pair</span><span class="p">[</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="nx">T</span><span class="p">],</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="nx">xs</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="k">range</span><span class="w"> </span><span class="nx">xs</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">ys</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">Pair</span><span class="p">{</span><span class="nx">first</span><span class="p">:</span><span class="w"> </span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="nx">second</span><span class="p">:</span><span class="w"> </span><span class="nx">value</span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">ys</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">Map</span><span class="p">[</span><span class="nx">T</span><span class="p">,</span><span class="w"> </span><span class="nx">V</span><span class="w"> </span><span class="nx">any</span><span class="p">](</span><span class="nx">f</span><span class="w"> </span><span class="kd">func</span><span class="p">(</span><span class="nx">T</span><span class="p">)</span><span class="w"> </span><span class="nx">V</span><span class="p">,</span><span class="w"> </span><span class="nx">xs</span><span class="w"> </span><span class="p">[]</span><span class="nx">T</span><span class="p">)</span><span class="w"> </span><span class="p">[]</span><span class="nx">V</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">ys</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nb">make</span><span class="p">([]</span><span class="nx">V</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="nx">xs</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="k">range</span><span class="w"> </span><span class="nx">xs</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">ys</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">f</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">ys</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">Map</span><span class="p">(</span><span class="nx">Enumerate</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Args</span><span class="p">)))</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre>
+<p>
+But now I'm doubting whether that's truly what I wanted to write.
+</p>
+        </article>
+        
+    </body>
+</html>
