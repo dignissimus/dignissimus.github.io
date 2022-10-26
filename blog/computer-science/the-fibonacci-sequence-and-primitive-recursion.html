@@ -108,10 +108,7 @@ The <code>fib</code> function contains two recursive calls. If T(n) denotes the 
 $$T(n) = T(n-1) + T(n-2)$$
 </p>
 <p>
-This is a homogenous linear recurrence relation and can be solved in the standard way.
-</p>
-<p>
-This implementation of the Fibonacii
+This is a homogenous linear recurrence relation and can be solved in the standard way. Solving the recurrence relation reveals that this implementation of the Fibonacci  runs in exponential time.
 </p>
 <p>
 Observing that this defines recurrence relation also defines the Fibonacci sequence funnily implies that the runtime, \(T(n)\), of our function to calculate the value of the Fibonacci sequence at index \(n\) runs in \(O\left(F(n)\right)\) time where \(F\) refers to the value of the Fibonacci sequence at index \(n\).
