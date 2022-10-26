@@ -65,7 +65,7 @@ Projection \(u^n_i(x_1, \dots, x_n) = x_i\)
 Further primitive recursive functions can be created via composition \(f \circ g\) and via primitive recursion.
 </p>
 <p>
-For some total function \(g\) and constant \(k\), \(h\) is said to have been obtained from \(g\) via primitie recursion if
+For some total function \(g\) and constant \(k\), \(h\) is said to have been obtained from \(g\) via primitive recursion if
 </p>
 <p>
 $$
@@ -76,7 +76,7 @@ h(t + 1) &amp;= g(t, h(t))\\
 $$
 </p>
 <p>
-The smallest class of functions including the initial functions and is closed under primitve recursion defines the primitive recursive functions.
+The smallest class of functions including the initial functions and is closed under primitive recursion defines the primitive recursive functions.
 </p>
 <p>
 The Fibonacci sequence can be defined as follows
@@ -108,7 +108,10 @@ The <code>fib</code> function contains two recursive calls. If T(n) denotes the 
 $$T(n) = T(n-1) + T(n-2)$$
 </p>
 <p>
-This is a homogenous linear recurrence relation and can be solved in the standard way
+This is a homogenous linear recurrence relation and can be solved in the standard way.
+</p>
+<p>
+This implementation of the Fibonacii
 </p>
 <p>
 Observing that this defines recurrence relation also defines the Fibonacci sequence funnily implies that the runtime, \(T(n)\), of our function to calculate the value of the Fibonacci sequence at index \(n\) runs in \(O\left(F(n)\right)\) time where \(F\) refers to the value of the Fibonacci sequence at index \(n\).
