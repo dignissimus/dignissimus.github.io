@@ -202,6 +202,9 @@ I will probably want to perform Machine Learning on datasets where the data cont
 <p>
 I currently have 17 solidity-related browser tabs open and because I am not a heathen, this makes me anxious.
 </p>
+<p>
+<img src="https://i.imgur.com/IEriCna.png"></img>
+</p>
 <h1> 13:15 - Basic machine learning </h1>
 <p>
 I think I'll take a small break before I start with something small. My plan is to build a linear regression model and train it using gradient descent.
@@ -268,6 +271,291 @@ The reader can verify that this indeed defines an equivalence relation and retur
 </p>
 <p>
 It is currently 14:31 so I won't spend time formalising my construction but the definition of addition and multiplication comes naturally if you interpret \((p, q)\) as representing the fraction \(\frac{p}{q}\).
+</p>
+<h1>15:09 - ???</h1>
+<p>
+I went to test my linear regression code. Loading the values worked fine after I fixed a bug (try and find it in the code above!) but when I ran the code to train the model, the Remix IDE crashed.
+</p>
+<h1>15:21 - Trying again, minor fixes</h1>
+<p>
+So I tried running the linear regression with smaller values, the IDE didn't crash and the machine <i>did</i> in fact learn but it had learned the function \(y = 2\) for the data \(X = [1, 2, 3], Y = [3, 5, 8]\). Immediately I was able to spot some minor bugs in my code. There's actually a glaring major mistake in what I wrote above for the OLS estimate for \(\beta_0\). And secondly, I made an subtle error in my training code where I trained a model to predict \(X\) using as the predictor \(X\). There was also another mistake where I calculated the variance wrong and another mistake where I
+</p>
+<p>
+\[\dots\]
+</p>
+<h1>15:46 - More problems</h1>
+<p>
+Firstly, the Remix IDE appears to be very prone to crashing. I keep getting the following error.
+</p>
+<pre>
+[21067:1119/154525.567488:ERROR:v8_initializer.cc(714)] V8 javascript OOM (Reached heap limit).
+</pre>
+<p>
+Note that this is almost entirely my fault. My implementation of the Rational numbers is extremely inefficient. And I create new rationals for every operation I complete.
+</p>
+<h1>15:56 - ...</h1>
+<p>
+I have sat here poking at my code for 10 minutes and I don't think I can do anything about having the world's worst replacement for floating point numbers. I'm very close to a proof of concept, the smart contract loads the data, trains the model then runs out of memory during the prediction step.
+</p>
+<h1>16:09 - A terrible mistake</h1>
+<p>
+I've been calculating the covariance wrong. Just entirely wrong. I tried to make an optimisation but it was just not correct. Essentially I calculated the following
+</p>
+<p>
+\[
+\sum_ {i = 1}^ n \frac{(x_i - y_i)^2}{n}
+\]
+</p>
+<p>
+I actually want the following
+</p>
+<p>
+\[\sum_ {i=1}^n \frac{(x - \bar{x}_i)(y-\bar{y}_i)}{n}\]
+</p>
+<h1>16:19 - Success!</h1>
+<p>
+I gave Buzzword the data (\(X = [1, 2], Y = [2, 4]\)), I then asked it to train the linear regression model. I gave it the value 1 and asked it to preict a result and it returned 2. Nice!
+</p>
+<p>
+I gave it 2 and asked it to predict a result and it returned 4. Cool!
+</p>
+<p>
+I gave it 3 and asked it to predict a result and it returned 6. Awesome!
+</p>
+<p>
+I checked the internals and it has learned the function \(Y = 2X\) or more precisely \(Y = \frac{0}{262144} + \frac{32768}{16384}X\) which computes the same function.
+</p>
+<p>
+Here's my code so far.
+</p>
+<pre class="lang-solidity pygments" data-lang="solidity">
+<span class="k">pragma solidity</span><span class="w"> </span><span class="o">^</span><span class="k">0.8.7</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">contract</span><span class="w"> </span><span class="ni">Buzzword</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span>bytes1<span class="w"> </span><span class="kt">constant</span><span class="w"> </span>ZERO<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;0&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span>bytes1<span class="w"> </span><span class="kt">constant</span><span class="w"> </span>NINE<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;9&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span>xs<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span>ys<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span>work<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nv">result</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span>Rational<span class="w"> </span>linearRegressionBias<span class="p">;</span><span class="w"></span>
+<span class="w">    </span>Rational<span class="w"> </span>linearRegressionWeight<span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">struct</span><span class="w"> </span><span class="nv">Rational</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="nv">p</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="nv">q</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">rationalEquals</span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>left<span class="p">,</span><span class="w"> </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>right<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span><span class="kt">bool</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>left<span class="p">.</span>p<span class="w"> </span><span class="o">*</span><span class="w"> </span>right<span class="p">.</span>q<span class="w"> </span><span class="o">==</span><span class="w"> </span>left<span class="p">.</span>q<span class="w"> </span><span class="o">*</span><span class="w"> </span>right<span class="p">.</span>p<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">rationalAdd</span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>left<span class="p">,</span><span class="w"> </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>right<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>Rational<span class="p">(</span>left<span class="p">.</span>p<span class="w"> </span><span class="o">*</span><span class="w"> </span>right<span class="p">.</span>q<span class="w"> </span><span class="o">+</span><span class="w"> </span>right<span class="p">.</span>p<span class="w"> </span><span class="o">*</span><span class="w"> </span>left<span class="p">.</span>q<span class="p">,</span><span class="w"> </span>left<span class="p">.</span>q<span class="w"> </span><span class="o">*</span><span class="w"> </span>right<span class="p">.</span>q<span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">rationalNegate</span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>rational<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>Rational<span class="p">(</span><span class="o">-</span>rational<span class="p">.</span>p<span class="p">,</span><span class="w"> </span>rational<span class="p">.</span>q<span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">rationalSubtract</span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>left<span class="p">,</span><span class="w"> </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>right<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>rationalAdd<span class="p">(</span>left<span class="p">,</span><span class="w"> </span>rationalNegate<span class="p">(</span>right<span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">rationalMultiply</span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>left<span class="p">,</span><span class="w"> </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>right<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>Rational<span class="p">(</span>left<span class="p">.</span>p<span class="w"> </span><span class="o">*</span><span class="w"> </span>right<span class="p">.</span>p<span class="p">,</span><span class="w"> </span>left<span class="p">.</span>q<span class="w"> </span><span class="o">*</span><span class="w"> </span>right<span class="p">.</span>q<span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">rationalSquare</span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>rational<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>rationalMultiply<span class="p">(</span>rational<span class="p">,</span><span class="w"> </span>rational<span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">rationalInvert</span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>rational<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>Rational<span class="p">(</span>rational<span class="p">.</span>q<span class="p">,</span><span class="w"> </span>rational<span class="p">.</span>p<span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">rationalDivide</span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>left<span class="p">,</span><span class="w"> </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>right<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>rationalMultiply<span class="p">(</span>left<span class="p">,</span><span class="w"> </span>rationalInvert<span class="p">(</span>right<span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">normalise</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>rational<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>Rational<span class="p">(</span>rational<span class="p">.</span>p<span class="w"> </span><span class="o">/</span><span class="w"> </span>rational<span class="p">.</span>q<span class="p">,</span><span class="w"> </span><span class="m m-Decimal">1</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">integerToRational</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="nv">number</span><span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>Rational<span class="p">(</span>number<span class="p">,</span><span class="w"> </span><span class="m m-Decimal">1</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">uintegerToRational</span><span class="w"> </span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="nv">number</span><span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>integerToRational<span class="p">(</span><span class="kt">int</span><span class="p">(</span>number<span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">leastSquaresLoss</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span><span class="kt">memory</span><span class="w"> </span>yacc<span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span><span class="kt">memory</span><span class="w"> </span>yhat<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span>Rational<span class="w"> </span><span class="kt">memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">require</span><span class="p">(</span>ys<span class="p">.</span>length<span class="w"> </span><span class="o">==</span><span class="w"> </span>yhat<span class="p">.</span>length<span class="p">);</span><span class="w"></span>
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>n<span class="w"> </span><span class="o">=</span><span class="w"> </span>uintegerToRational<span class="p">(</span>ys<span class="p">.</span>length<span class="p">);</span><span class="w"></span>
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>loss<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span><span class="m m-Decimal">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="kt">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="nv">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"> </span>index<span class="w"> </span><span class="o">&lt;</span><span class="w"> </span>ys<span class="p">.</span>length<span class="p">;</span><span class="w"> </span>index<span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>actual<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span>yacc<span class="p">[</span>index<span class="p">]);</span><span class="w"></span>
+<span class="w">            </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>predicted<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span>yhat<span class="p">[</span>index<span class="p">]);</span><span class="w"></span>
+<span class="w">            </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>deviation<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalSubtract<span class="p">(</span>actual<span class="p">,</span><span class="w"> </span>predicted<span class="p">);</span><span class="w"></span>
+<span class="w">            </span>loss<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalAdd<span class="p">(</span>loss<span class="p">,</span><span class="w"></span>
+<span class="w">                </span>rationalDivide<span class="p">(</span><span class="w"></span>
+<span class="w">                    </span>rationalSquare<span class="p">(</span>deviation<span class="p">),</span><span class="w"></span>
+<span class="w">                    </span>n<span class="w"></span>
+<span class="w">                </span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>loss<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">trainLinearRegressionModelWithOls</span><span class="p">()</span><span class="w"> </span><span class="kt">public</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>Y_bar<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span><span class="m m-Decimal">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>X_bar<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span><span class="m m-Decimal">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>X_squared_bar<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span><span class="m m-Decimal">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>B1<span class="p">;</span><span class="w"></span>
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>B0<span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>Cov_XY<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span><span class="m m-Decimal">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">require</span><span class="p">(</span>xs<span class="p">.</span>length<span class="w"> </span><span class="o">==</span><span class="w"> </span>ys<span class="p">.</span>length<span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// Calculate B0 = X_bar</span>
+<span class="w">        </span><span class="c1">// And B1 = Cov(X, Y)/Var(X)</span>
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>n<span class="w"> </span><span class="o">=</span><span class="w"> </span>uintegerToRational<span class="p">(</span>xs<span class="p">.</span>length<span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="kt">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="nv">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"> </span>index<span class="w"> </span><span class="o">&lt;</span><span class="w"> </span>xs<span class="p">.</span>length<span class="p">;</span><span class="w"> </span>index<span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Contributing to the mean of X</span>
+<span class="w">            </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>x<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span>xs<span class="p">[</span>index<span class="p">]);</span><span class="w"></span>
+<span class="w">            </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>y<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span>ys<span class="p">[</span>index<span class="p">]);</span><span class="w"></span>
+
+<span class="w">            </span>X_squared_bar<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalAdd<span class="p">(</span><span class="w"></span>
+<span class="w">                </span>X_squared_bar<span class="p">,</span><span class="w"></span>
+<span class="w">                </span>rationalDivide<span class="p">(</span>rationalSquare<span class="p">(</span>x<span class="p">),</span><span class="w"> </span>n<span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span>X_bar<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalAdd<span class="p">(</span><span class="w"></span>
+<span class="w">                </span>X_bar<span class="p">,</span><span class="w"></span>
+<span class="w">                </span>rationalDivide<span class="p">(</span>x<span class="p">,</span><span class="w"> </span>n<span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span>Y_bar<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalAdd<span class="p">(</span><span class="w"></span>
+<span class="w">                </span>Y_bar<span class="p">,</span><span class="w"></span>
+<span class="w">                </span>rationalDivide<span class="p">(</span>y<span class="p">,</span><span class="w"> </span>n<span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="nv">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"> </span>index<span class="w"> </span><span class="o">&lt;</span><span class="w"> </span>xs<span class="p">.</span>length<span class="p">;</span><span class="w"> </span>index<span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>x<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span>xs<span class="p">[</span>index<span class="p">]);</span><span class="w"></span>
+<span class="w">            </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>y<span class="w"> </span><span class="o">=</span><span class="w"> </span>integerToRational<span class="p">(</span>ys<span class="p">[</span>index<span class="p">]);</span><span class="w"></span>
+<span class="w">            </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>contribution<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalDivide<span class="p">(</span><span class="w"></span>
+<span class="w">                    </span>rationalMultiply<span class="p">(</span><span class="w"></span>
+<span class="w">                        </span>rationalSubtract<span class="p">(</span>x<span class="p">,</span><span class="w"> </span>X_bar<span class="p">),</span><span class="w"></span>
+<span class="w">                        </span>rationalSubtract<span class="p">(</span>y<span class="p">,</span><span class="w"> </span>Y_bar<span class="p">)</span><span class="w"></span>
+<span class="w">                    </span><span class="p">),</span><span class="w"></span>
+<span class="w">                    </span>n<span class="w"></span>
+<span class="w">                </span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span>Cov_XY<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalAdd<span class="p">(</span><span class="w"></span>
+<span class="w">                </span>Cov_XY<span class="p">,</span><span class="w"></span>
+<span class="w">                </span>contribution<span class="w"></span>
+<span class="w">            </span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// Calculate the variance of X</span>
+<span class="w">        </span>Rational<span class="w"> </span><span class="kt">memory</span><span class="w"> </span>Var_X<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalSubtract<span class="p">(</span>X_squared_bar<span class="p">,</span><span class="w"> </span>rationalSquare<span class="p">(</span>X_bar<span class="p">));</span><span class="w"></span>
+
+<span class="w">        </span>B1<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalDivide<span class="p">(</span>Cov_XY<span class="p">,</span><span class="w"> </span>Var_X<span class="p">);</span><span class="w"></span>
+<span class="w">        </span>B0<span class="w"> </span><span class="o">=</span><span class="w"> </span>rationalSubtract<span class="p">(</span><span class="w"></span>
+<span class="w">            </span>Y_bar<span class="p">,</span><span class="w"></span>
+<span class="w">            </span>rationalMultiply<span class="p">(</span>B1<span class="p">,</span><span class="w"> </span>X_bar<span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span>linearRegressionBias<span class="w"> </span><span class="o">=</span><span class="w"> </span>B0<span class="p">;</span><span class="w"></span>
+<span class="w">        </span>linearRegressionWeight<span class="w"> </span><span class="o">=</span><span class="w"> </span>B1<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">predict</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="nv">x</span><span class="p">)</span><span class="w"> </span><span class="kt">public</span><span class="w"> </span><span class="kt">payable</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span>result<span class="w"> </span><span class="o">=</span><span class="w"> </span>normalise<span class="p">(</span><span class="w"></span>
+<span class="w">            </span>rationalAdd<span class="p">(</span><span class="w"></span>
+<span class="w">                </span>linearRegressionBias<span class="p">,</span><span class="w"></span>
+<span class="w">                </span>rationalMultiply<span class="p">(</span><span class="w"></span>
+<span class="w">                    </span>linearRegressionWeight<span class="p">,</span><span class="w"></span>
+<span class="w">                    </span>integerToRational<span class="p">(</span>x<span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">).</span>p<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">predictionResult</span><span class="p">()</span><span class="w"> </span><span class="kt">public</span><span class="w"> </span>view<span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>result<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">loadData</span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>xstring<span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>ystring<span class="p">)</span><span class="w"> </span><span class="kt">public</span><span class="w"> </span><span class="kt">payable</span><span class="w">  </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">bytes</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>xbytes<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">bytes</span><span class="p">(</span>xstring<span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="kt">bytes</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>ybytes<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">bytes</span><span class="p">(</span>ystring<span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// Work on the assumption that there is at least one item in the arrays</span>
+<span class="w">        </span>xs<span class="w"> </span><span class="o">=</span><span class="w"> </span>readIntegerArray<span class="p">(</span>xbytes<span class="p">);</span><span class="w"></span>
+<span class="w">        </span>ys<span class="w"> </span><span class="o">=</span><span class="w"> </span>readIntegerArray<span class="p">(</span>ybytes<span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">testXsContainsData</span><span class="p">()</span><span class="w"> </span><span class="kt">public</span><span class="w"> </span>view<span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>xs<span class="p">[</span><span class="m m-Decimal">0</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">readIntegerArray</span><span class="p">(</span><span class="kt">bytes</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>bArray<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span><span class="kt">memory</span><span class="p">){</span><span class="w"></span>
+<span class="w">        </span>work<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="kt">int</span><span class="p">[](</span><span class="m m-Decimal">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// Work out how many numbers there are</span>
+<span class="w">        </span><span class="kt">uint</span><span class="w"> </span><span class="nv">numIntegers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="nv">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"> </span>index<span class="w"> </span><span class="o">&lt;</span><span class="w"> </span>bArray<span class="p">.</span>length<span class="p">;</span><span class="w"> </span>index<span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="kt">if</span><span class="w"> </span><span class="p">(</span>bArray<span class="p">[</span>index<span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;;&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span>numIntegers<span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// The beginning of the number begins at</span>
+<span class="w">        </span><span class="kt">uint</span><span class="w"> </span><span class="nv">bArrayIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="nv">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"> </span>index<span class="w"> </span><span class="o">&lt;</span><span class="w"> </span>numIntegers<span class="p">;</span><span class="w"> </span>index<span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Read the sign</span>
+<span class="w">            </span><span class="kt">int</span><span class="w"> </span><span class="nv">sign</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="kt">if</span><span class="w"> </span><span class="p">(</span>bArray<span class="p">[</span>bArrayIndex<span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;+&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span>sign<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="kt">else</span><span class="w"> </span><span class="kt">if</span><span class="w"> </span><span class="p">(</span>bArray<span class="p">[</span>bArrayIndex<span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span>sign<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="m m-Decimal">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="kt">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="kt">require</span><span class="p">(</span><span class="kt">false</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Increment the string index</span>
+<span class="w">            </span>bArrayIndex<span class="o">++</span><span class="p">;</span><span class="w"></span>
+
+
+<span class="w">            </span><span class="kt">uint</span><span class="w"> </span><span class="nv">number</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Read numbers until the termination character</span>
+<span class="w">            </span><span class="kt">while</span><span class="w"> </span><span class="p">(</span>bArray<span class="p">[</span>bArrayIndex<span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s2">&quot;;&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span>number<span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="m m-Decimal">10</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span>bytes1<span class="w"> </span>digitByte<span class="w"> </span><span class="o">=</span><span class="w"> </span>bArray<span class="p">[</span>bArrayIndex<span class="p">];</span><span class="w"></span>
+<span class="w">                </span><span class="kt">require</span><span class="p">(</span>ZERO<span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span>digitByte<span class="w"> </span><span class="err">&amp;&amp;</span><span class="w"> </span>digitByte<span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span>NINE<span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="kt">uint8</span><span class="w"> </span><span class="nv">digitValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">uint8</span><span class="p">(</span>digitByte<span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="kt">uint8</span><span class="p">(</span>ZERO<span class="p">);</span><span class="w"></span>
+<span class="w">                </span>number<span class="w"> </span><span class="o">+=</span><span class="w"> </span>digitValue<span class="p">;</span><span class="w"></span>
+<span class="w">                </span>bArrayIndex<span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Skip the final termination symbol</span>
+<span class="w">            </span>bArrayIndex<span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span>work<span class="p">.</span>push<span class="p">(</span><span class="kt">int</span><span class="p">(</span>number<span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span>sign<span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>work<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre>
+<h1>16:45 - A pretty picture</h1>
+<p>
+I spent 20 minutes making this graph to explain the what Buzzword has done. I am so proud of my creation.
+</p>
+<p>
+<img src="https://i.imgur.com/NA3uWzo.png"/>
 </p>
         </article>
         
