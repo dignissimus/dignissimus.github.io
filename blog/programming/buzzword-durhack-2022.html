@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Buzzword</title>
+        <link rel="stylesheet" href="../assets/fonts.css">
+        <link rel="stylesheet" href="../assets/graphite.css">
+        <link rel="stylesheet" href="../assets/pygments.css">
+        
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script>
+
+       <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+
+        
+        
+    </head>
+    <body class="node-programming-buzzword-durhack-2022 node-programming node">
+        <header class="masthead">
+            <h1><a href="../index.html">Sam's blog</a></h1>
+            
+                <p class="tagline">Assorted ideas, thoughts and considerations</p>
+            
+            
+            <nav class="menu">
+                <input id="menu-check" type="checkbox"/>
+                <label id="menu-label" for="menu-check" class="unselectable">
+                    <span class="icon close-icon">✕</span>
+                    <span class="icon open-icon">☰</span>
+                    <span class="text">Menu</span>
+                </label>
+                <ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../programming.html">Programming</a></li>
+<li><a href="../economics.html">Economics</a></li>
+<li><a href="../computer-science.html">Computer Science</a></li>
+<li><a href="../scratchpad.html">Scratchpad</a></li>
+</ul>
+            </nav>
+        </header>
+        <article class="main">
+            <header class="title">
+                <h1>Buzzword</h1>
+                
+                    <p class="subtitle">The timeline of my experience at Durhack</p>
+                
+                <hr>
+            </header>
+            <h1>10:39 - The beginning</h1>
+<p>
+Today I'm taking part in <a href="https://durhack.com/">Durhack</a>, the <a href="https://durham.ac.uk/">Durham University</a> Hackathon and I'm determined to make the dumbest project at the hackathon. My vague idea is a project with the name of <i>Buzzword</i>. It's a distributed-first, scalable programming language with built-in automatic differentiation for Machine Learning on the Blockchain. Yup.
+</p>
+<h1> 10:53 - The group that uses Rust </h1>
+<p>
+I have just met a group being led by a Rust programmer, the rest of the group is new to Rust. I inquire about this and remark that it takes a <i>lifetime</i> (pun-intended) to understand the Rust borrow-checker.
+<h1> 10:57 - Doubly linked lsits </h1>
+Today I learned about Doubly Linked Lists in Rust. Gnarly.
+</p>
+<pre class="lang-rust pygments" data-lang="rust">
+<span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">cell</span>::<span class="n">RefCell</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">List</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">head</span>: <span class="nc">Link</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">tail</span>: <span class="nc">Link</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="k">type</span> <span class="nc">Link</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Rc</span><span class="o">&lt;</span><span class="n">RefCell</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;&gt;&gt;</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">struct</span> <span class="nc">Node</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">elem</span>: <span class="nc">T</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">next</span>: <span class="nc">Link</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">prev</span>: <span class="nc">Link</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre>
+<h1> 11:04 - A profound realisation </h1>
+<p>
+I realise that if I spend my entire time writing about Durhack, I will not have time to do any programming.
+</p>
+<h1> 11:06 - The introductory talk commences </h1>
+<h1> 12:03 - A smart idea</h1>
+<p>
+I decide to stop writing and start programming.
+</p>
+<h1> 12:04 - Scratch that</h1>
+<p>
+I realise that I need to program in Solidity but I do not know how to program in solidity. But I have 24 hours to work this out, I think.
+<h1> 12:05 - Intermission </h1>
+I will see if I can find any food and after that I will start programming, <i>I promise</i>.
+<h1> 12:08 - Disappointment </h1>
+I have been informed that the Subway order has been delayed. I will begin programming albeit hungry and a bit sad.
+<h1> 12:18 - I need a plan </h1>
+I think the most important part of this project is getting machine learning done on the blockchain. So I've made the decision to postpone the language implementation until later.
+</p>
+<p>
+I started defining the necessary data types to build an API for Neural Networks but I'm wondering if I even need to do this. My idea is that I can start with classical Machine Learning techniques and potentially add Neural Networks if I have time. My only concern with Neural networks is the backpropogation step, I want to keep my project simple so I make a mistake and spend more time debugging.
+</p>
+<p>
+I'll keep the API in a separate file but I'll focus my efforts on getting a proof of concept first.
+</p>
+<h1> 12:33 - Another realisation</h1>
+<p>
+I am learning Solidity at the same time as building a relatively non-trivial project in it. I am currently working out how to read an array of integers from a string.
+</p>
+<h1> 12:53 - Progress?? </h1>
+<p>
+I am learning a lot about solidity and I think I've just read a list of integers from a string??
+My code compiles, which I did not expect.
+</p>
+<h1> 12:57 - ??? </h1>
+<p>
+I feel like a Boomer. I think I just deployed some code to the blockchain?
+</p>
+<h1> 12:59 - ????? </h1>
+<p>
+I ran my code and it did not error?
+</p>
+<h1> 13:00 - Progress! </h1>
+<p>
+I can read strings into integer arrays and store them on the blockchain! It only took 27 minutes, 66 lines of code and countless lookups to the solidity reference document.
+</p>
+<pre class="lang-solidity pygments" data-lang="solidity">
+<span class="k">pragma solidity</span><span class="w"> </span><span class="o">^</span><span class="k">0.8.7</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">contract</span><span class="w"> </span><span class="ni">Buzzword</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span>bytes1<span class="w"> </span><span class="kt">constant</span><span class="w"> </span>ZERO<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;0&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span>bytes1<span class="w"> </span><span class="kt">constant</span><span class="w"> </span>NINE<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;9&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span>xs<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span>ys<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span>work<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">loadData</span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>xstring<span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>ystring<span class="p">)</span><span class="w"> </span><span class="kt">public</span><span class="w"> </span><span class="kt">payable</span><span class="w">  </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">bytes</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>xbytes<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">bytes</span><span class="p">(</span>xstring<span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="kt">bytes</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>ybytes<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">bytes</span><span class="p">(</span>ystring<span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// Work on the assumption that there is at least one item in the arrays</span>
+<span class="w">        </span>xs<span class="w"> </span><span class="o">=</span><span class="w"> </span>readIntegerArray<span class="p">(</span>xbytes<span class="p">);</span><span class="w"></span>
+<span class="w">        </span>ys<span class="w"> </span><span class="o">=</span><span class="w"> </span>readIntegerArray<span class="p">(</span>ybytes<span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">testXsContainsData</span><span class="p">()</span><span class="w"> </span><span class="kt">public</span><span class="w"> </span>view<span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>xs<span class="p">[</span><span class="m m-Decimal">0</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">readIntegerArray</span><span class="p">(</span><span class="kt">bytes</span><span class="w"> </span><span class="nv">memory</span><span class="w"> </span>bArray<span class="p">)</span><span class="w"> </span><span class="kt">private</span><span class="w"> </span><span class="kt">returns</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">[]</span><span class="w"> </span><span class="kt">memory</span><span class="p">){</span><span class="w"></span>
+<span class="w">        </span>work<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="kt">int</span><span class="p">[](</span><span class="m m-Decimal">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// Work out how many numbers there are</span>
+<span class="w">        </span><span class="kt">uint</span><span class="w"> </span><span class="nv">numIntegers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="nv">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"> </span>index<span class="w"> </span><span class="o">&lt;</span><span class="w"> </span>bArray<span class="p">.</span>length<span class="p">;</span><span class="w"> </span>index<span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="kt">if</span><span class="w"> </span><span class="p">(</span>bArray<span class="p">[</span>index<span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;;&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span>numIntegers<span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// The beginning of the number begins at</span>
+<span class="w">        </span><span class="kt">uint</span><span class="w"> </span><span class="nv">bArrayIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint</span><span class="w"> </span><span class="nv">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">0</span><span class="p">;</span><span class="w"> </span>index<span class="w"> </span><span class="o">&lt;</span><span class="w"> </span>numIntegers<span class="p">;</span><span class="w"> </span>index<span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Read the sign</span>
+<span class="w">            </span><span class="kt">int</span><span class="w"> </span><span class="nv">sign</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="kt">if</span><span class="w"> </span><span class="p">(</span>bArray<span class="p">[</span>bArrayIndex<span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;+&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span>sign<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m m-Decimal">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="kt">else</span><span class="w"> </span><span class="kt">if</span><span class="w"> </span><span class="p">(</span>bArray<span class="p">[</span>bArrayIndex<span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span>sign<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="m m-Decimal">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="kt">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="kt">require</span><span class="p">(</span><span class="kt">false</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Increment the string index</span>
+<span class="w">            </span>bArrayIndex<span class="o">++</span><span class="p">;</span><span class="w"></span>
+
+
+<span class="w">            </span><span class="kt">uint</span><span class="w"> </span><span class="nv">number</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Read numbers until the termination character</span>
+<span class="w">            </span><span class="kt">while</span><span class="w"> </span><span class="p">(</span>bArray<span class="p">[</span>bArrayIndex<span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s2">&quot;;&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span>number<span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="m m-Decimal">10</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span>bytes1<span class="w"> </span>digitByte<span class="w"> </span><span class="o">=</span><span class="w"> </span>bArray<span class="p">[</span>bArrayIndex<span class="p">];</span><span class="w"></span>
+<span class="w">                </span><span class="kt">require</span><span class="p">(</span>ZERO<span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span>digitByte<span class="w"> </span><span class="err">&amp;&amp;</span><span class="w"> </span>digitByte<span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span>NINE<span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="kt">uint8</span><span class="w"> </span><span class="nv">digitValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">uint8</span><span class="p">(</span>digitByte<span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="kt">uint8</span><span class="p">(</span>ZERO<span class="p">);</span><span class="w"></span>
+<span class="w">                </span>number<span class="w"> </span><span class="o">+=</span><span class="w"> </span>digitValue<span class="p">;</span><span class="w"></span>
+<span class="w">                </span>bArrayIndex<span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span>work<span class="p">.</span>push<span class="p">(</span><span class="kt">int</span><span class="p">(</span>number<span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span>sign<span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span>work<span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre>
+<p>
+I am not looking forward to implementing any sort of machine learning.
+</p>
+<h1> 13:06 - Problems </h1>
+<p>
+I will probably want to perform Machine Learning on datasets where the data contains more than a singular integer feature. I can read an array of integers but I will probably want to read arrays of tuples of integers. But I can worry about this later.
+</p>
+        </article>
+        
+    </body>
+</html>
