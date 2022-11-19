@@ -243,6 +243,32 @@ I had an two ideas of re-implementing floating point arithmetic in Solidity or c
 <p>
 Solidity does not actually support fixed-point arithmetic. The language documentation states that fixed-point numbers can be declared but cannot be assigned to. This is horrific.
 </p>
+<h1>14:24 - Weighing up my options</h1>
+<p>
+I now have a few options. I can use a hardened and tested library for floating-point arithmetic in Solidity which would make my life easier <i>or</i> I could create a hack to represent rational numbers.
+</p>
+<p>
+\[\dots\]
+</p>
+<h1>14:25 - Rational numbers</h1>
+<p>
+So, I can represent a rational number as a pair of integers
+</p>
+<p>
+\[\mathbb Q := \{ (p, q) : p, q \in \mathbb Z \}\]
+</p>
+<p>
+Define equality as the following relation
+</p>
+<p>
+\[ R = \{\left&lt;(p_1, q_1), (p_2, q_2)\right&gt; : p_1 q_2 = q_1 p_2\} \]
+</p>
+<p>
+The reader can verify that this indeed defines an equivalence relation and returns expected results.
+</p>
+<p>
+It is currently 14:31 so I won't spend time formalising my construction but the definition of addition and multiplication comes naturally if you interpret \((p, q)\) as representing the fraction \(\frac{p}{q}\).
+</p>
         </article>
         
     </body>
