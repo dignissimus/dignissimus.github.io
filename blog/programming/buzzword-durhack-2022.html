@@ -206,6 +206,43 @@ I currently have 17 solidity-related browser tabs open and because I am not a he
 <p>
 I think I'll take a small break before I start with something small. My plan is to build a linear regression model and train it using gradient descent.
 </p>
+<h1>13:22 - Getting started</h1>
+<p>
+Break over. Machine Learning time.
+<h1>13:39  - Lunch</h1>
+I re-started my break and ate Durhack-provisioned <a href="https://www.subway.com/">Subway</a>. I rate the food quite highly, I was satisfied.
+<h1>13:48 - Pain</h1>
+It would be really usefuly if solidity had a library for automatic differentiation. It is starting to feel like the language wasn't made for machine learning. I'm taking a break and I will think about my plan moving forward.
+<h1>14:02 - Thoughts </h1>
+I know from my econometrics book that the OLS estimate for the univariate model, \(Y = \beta_0 + \beta_1 X\) has the following OLS estimate.
+</p>
+<p>
+\[
+\begin{align}
+\beta_0 &amp;= \bar{X} \\
+\beta_1 &amp;= \frac{\text{Cov}(X, Y)}{\text{Var}(X)}
+\end{align}
+\]
+</p>
+<p>
+For now I will use this shortcut and potentially move onto gradient descent later. There are many similar shortcuts like this since I can use references to find the derivatives for some common loss and activation functions.
+</p>
+<h1> 14:06 - Pain </h1>
+<p>
+Solidity does not support floating point numbers. This is disasterous.
+</p>
+<h1>14:18 - Acceptance</h1>
+<p>
+I have sped-run the <a href="https://en.wikipedia.org/wiki/Five_stages_of_grief">stages of grief</a> and I am embracing fixed-point arithmetic. What could go wrong.
+</p>
+<h2> An aside </h2>
+<p>
+I had an two ideas of re-implementing floating point arithmetic in Solidity or creating a rational number datatype and implementing the arithmetic operations myself. There are also some libraries for floating point arithmetic in Solidity so I am considering potentially using those in the future.
+</p>
+<h1>14:21 - Disaster</h1>
+<p>
+Solidity does not actually support fixed-point arithmetic. The language documentation states that fixed-point numbers can be declared but cannot be assigned to. This is horrific.
+</p>
         </article>
         
     </body>
