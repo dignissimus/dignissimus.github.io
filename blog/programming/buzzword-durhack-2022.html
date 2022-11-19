@@ -314,7 +314,7 @@ I actually want the following
 </p>
 <h1>16:19 - Success!</h1>
 <p>
-I gave Buzzword the data (\(X = [1, 2], Y = [2, 4]\)), I then asked it to train the linear regression model. I gave it the value 1 and asked it to preict a result and it returned 2. Nice!
+I gave Buzzword the data (\(X = [1, 2], Y = [2, 4]\)), I then asked it to train the linear regression model. I gave it the value 1 and asked it to predict a result and it returned 2. Nice!
 </p>
 <p>
 I gave it 2 and asked it to predict a result and it returned 4. Cool!
@@ -568,6 +568,85 @@ I found the following [1] blog post a few days ago that used the Salesforce Code
 <a href="https://joel.tools/codegen/">AI Found a Bug in My Code</a>, <i>Joel Einbinder</i>
 </li>
 </ol>
+<h1>19:17 - A difficulty</h1>
+<p>
+My measly 24.9GB of RAM and swap is not enough to run the Salesforce Codegen model. This is a problem.
+</p>
+<h1>19:19 - My options</h1>
+<p>
+I can either use a smaller model or I can use Google Colab to run computation then export the results to an external application that I'll create. I prefer the latter idea.
+</p>
+<h1>19:37 - Another idea??</h1>
+<p>
+I had the idea that I can simulate a <a href="https://en.wikipedia.org/wiki/Turing_machine">Turing machine</a> using GitHub actions with a new commit generated for every step of computation. I like this idea because it is stupid and there is also a prize for the best use of GitHub. I think I'll enter as a contestant.
+</p>
+<h1>19:44 - GitHub repository created</h1>
+<p>
+My GitHub repository is live at <a href="https://github.com/dignissimus/github-actions-turing-machine/tree/master">https://github.com/dignissimus/github-actions-turing-machine/</a>
+</p>
+<h1>19:51 - Deciding on the structure of the project</h1>
+<p>
+So I want to store the definition of the turing machine somewhere which should be ok. Then I also need to store the state of the turing machine. I left my Theory of Computations books at home but I should be good using Wikipedia as a reference.
+</p>
+<h1>19:53 - Another realisation</h1>
+<p>
+I have an assignment for Discrete Maths due in on Monday. I was organised and mostly completed the assignment in advance. But on the final question I used an inductive proof, I haven't shown the base case because it required some manipulation. I will start this sometime soon.
+</p>
+<h1>22:00 - Slideshow Karaoke</h1>
+<p>
+I've finished watching Slideshow Karaoke, an awesome event. And I've done my discrete maths as well.
+</p>
+<h1>22:15 - Project Structure</h1>
+<p>
+I think I will create a file called <code>state</code> to store the state of the turing machine. To keep things standard, I'll give the Turing machine a binary alphabet (0 and 1) and a single tape for input and output. These choices do not matter for the computational power of the Turing machine.
+</p>
+<p>
+The <code>state</code> file will contain 3 lines.
+</p>
+<p>
+The first line will contain a sequence of 0s 1s. Initially, the tape is filled with 0s. These can be stored implictly.
+</p>
+<p>
+The second line will contain a number, this represents the location of the read-write head on the tape. This number takes on a value from the natural numbers (\(\mathbb N = \{0, 1, 2, \dots\}\)).
+</p>
+<p>
+The third line will again contain a number. This number will index the state that Turing machine is currently in.
+</p>
+<p>
+There will also be a <code>machine</code> file. Each line in this file will define a state for the turing machine. The first line is the starting state.
+</p>
+<p>
+Each state-definition will contain 2 sections. The first section defines the action of the turing machine on input 0. The second section defines the action of the turing machine on input 1.
+</p>
+<p>
+A section defines the what the machine outputs, the direction to move the read-write head and the state to transition to.
+</p>
+<p>
+As an example I will give a definition for the 3-state busy beaver champion.
+</p>
+<h2>State</h2>
+<pre>
+0
+0
+0
+</pre>
+<h2>Machine</h2>
+<pre>
+1.R.1,1.L.2
+1.L.0,1.R.1
+1.L.1,1.L.H
+</pre>
+<p>
+In fact, at the start of computation the state file can be initialised to three zeros for any turing machine.
+</p>
+<h1>22:41 - GitHub actions</h1>
+<p>
+I don't exactly know how GitHub actions work, but that's ok. I will learn.
+</p>
+<h1>22:43 - Turing machine status</h1>
+<p>
+I've decided that I'll create a status file, its value will be <code>running</code>, <code>halt</code> or <code>start</code>. A commit that changes the contents of the status file to <code>start</code> will begin to perform the steps of computation for the Turing machine.
+</p>
         </article>
         
     </body>
