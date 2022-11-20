@@ -690,6 +690,14 @@ I'm able to deduce that the line causing the error is the following
 <p>
 I've just noticed the problem. You might be able to notice that in the above image, the Turing machine moves one to the right. So now it's in the second cell. Now it moves one to the left, it is back in the first cell. It then moves one to the left - it falls off the grid.
 </p>
+<h1>01:44 - Definitions</h1>
+<p>
+I've noticed that the example for the three-state busy beaver champion uses a two-way infinite tape. Hm. When doing Computer Science this doesn't really matter because they are effectively equivalent. But I am not doing Computer Science right now, I am doing Computer Hackery and I am using <code>sed</code> to simulate a Turing machine. This matters a lot.
+</p>
+<h1>01:48 - A hack</h1>
+<p>
+I can add a hack that goes like this: If the location of the read write head becomes negative, then I can prepend a character and pretend that the read-write head is at location 0.
+</p>
         </article>
         
     </body>
