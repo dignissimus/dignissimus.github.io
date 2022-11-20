@@ -88,7 +88,7 @@ I decide to stop writing and start programming.
 </p>
 <h1> 12:04 - Scratch that</h1>
 <p>
-I realise that I need to program in Solidity but I do not know how to program in solidity. But I have 24 hours to work this out, I think.
+I realise that I need to program in Solidity, but I do not know how to program in solidity. <i>But</i> I have 24 hours to work this out, I think.
 <h1> 12:05 - Intermission </h1>
 I will see if I can find any food and after that I will start programming, <i>I promise</i>.
 <h1> 12:08 - Disappointment </h1>
@@ -552,7 +552,7 @@ Here's my code so far.
 </pre>
 <h1>16:45 - A pretty picture</h1>
 <p>
-I spent 20 minutes making this graph to explain the what Buzzword has done. I am so proud of my creation.
+I spent 20 minutes making this graph to explain what Buzzword has done. I am so proud of my creation.
 </p>
 <p>
 <img src="https://i.imgur.com/NA3uWzo.png"/>
@@ -619,7 +619,7 @@ There will also be a <code>machine</code> file. Each line in this file will defi
 Each state-definition will contain 2 sections. The first section defines the action of the turing machine on input 0. The second section defines the action of the turing machine on input 1.
 </p>
 <p>
-A section defines the what the machine outputs, the direction to move the read-write head and the state to transition to.
+A section defines what the machine outputs, the direction to move the read-write head and the state to transition to.
 </p>
 <p>
 As an example I will give a definition for the 3-state busy beaver champion.
@@ -646,6 +646,27 @@ I don't exactly know how GitHub actions work, but that's ok. I will learn.
 <h1>22:43 - Turing machine status</h1>
 <p>
 I've decided that I'll create a status file, its value will be <code>running</code>, <code>halt</code> or <code>start</code>. A commit that changes the contents of the status file to <code>start</code> will begin to perform the steps of computation for the Turing machine.
+</p>
+<h1>23:59 - Midnight Pizza</h1>
+<p>
+I have been rewarded for my efforts with midnight peperoni pizza. I am happy.
+</p>
+<h1>01:10 - It works?</h1>
+<p>
+I was able to start the Turing machine and it correctly performed the first step of computation, but it seems to get stuck and not do anything afterwards.
+</p>
+<p>
+<img src="https://i.imgur.com/O4HyJlY.png"/>
+</p>
+<p>
+To remedy this, I decided to set up a cron schedule to start the action every 5 minutes so it can perform the next step of computation.
+</p>
+<p>
+Will this work? I will find out in 5 minutes.
+</p>
+<h1>01:25 - Seemingly no progress</h1>
+<p>
+The cron job does not seem to be running. however, I have another idea. I can run all the commits at once inside the action instead of running each commit in seperate action runs.
 </p>
         </article>
         
