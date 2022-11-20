@@ -730,6 +730,63 @@ There was some weird and subtle bug with one of my sed rewrite rules. I fixed th
 So I have about 8 hours left for the Hackathon but I think I'll finish here. I've had so much fun at Durhack, my first ever Hackathon.
 <img src="https://i.imgur.com/lEsx8ih.png"/>
 </p>
+<h1>07:32 - Renewed motivation?</h1>
+<p>
+So, I stayed awake just walking around and chatting to people. I feel like working on Coderly. I have four and a half hours so I'll see what I can do.
+</p>
+<h1>07:33 - Sample code</h1>
+<p>
+Below is the canonical source code I will be testing against. See if you can find the errors.
+</p>
+<pre class="lang-c pygments" data-lang="c">
+<span class="c1">// Adds five integers</span>
+<span class="kt">int</span><span class="p">[]</span><span class="w"> </span><span class="n">xs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">-3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">-5</span><span class="p">};</span><span class="w"></span>
+<span class="kt">int</span><span class="w"> </span><span class="n">sum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">sum</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">ys</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="n">printf</span><span class="p">(</span><span class="s">&quot;The product is %d&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sum</span><span class="p">);</span><span class="w"></span>
+</pre>
+<h1>07:36 - Opening up Google Colab</h1>
+<p>
+I'm going to load the 2B parameter model into Google Colab.
+</p>
+<h1>07:38 - Things are looking good</h1>
+<p>
+The model seems to load in Google Colab. This is god.
+</p>
+<h1>08:03 - Good news!</h1>
+<p>
+The model does what I want it to do! I'll try scaling it to the 6BN model then export the data to process locally.
+</p>
+<h1>08:06 - Thank you Google</h1>
+<p>
+Google's beefy servers allow me to download a 15GB model in just 4 minutes.
+</p>
+<h1>08:07 - Amending the sample code</h1>
+<p>
+I've noticed that the model has some implicit bias. It assumes the language is not C and doesn't expect to see <code>int[]</code>
+</p>
+<pre class="lang-c pygments" data-lang="c">
+<span class="c1">// The following C code adds five integers</span>
+<span class="kt">int</span><span class="p">[]</span><span class="w"> </span><span class="n">xs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">-3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">-5</span><span class="p">};</span><span class="w"></span>
+<span class="kt">int</span><span class="w"> </span><span class="n">sum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">sum</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">ys</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="n">printf</span><span class="p">(</span><span class="s">&quot;The product is %d&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sum</span><span class="p">);</span><span class="w"></span>
+</pre>
+<h1>08:11 - Model's downloaded!</h1>
+<p>
+Yay!
+<h1>08:11 - Colab instance crashed!</h1>
+So I only have about 12GB RAM available on my Google Colab instance. The 6B model seems to be too much. Back to 2B I go!
+<h1>08:16 - Data downloaded!</h1>
+Hacking time!!
+<h1>08:53 - The end!</h1>
+Proof of concept done! Writeup finished. Here's the final result.
+<img src="https://res.cloudinary.com/devpost/image/fetch/s--mj8g2lD9--/c_limit,f_auto,fl_lossy,q_auto:eco,w_900/https://i.imgur.com/L4OqsjV.png"/>
+</p>
         </article>
         
     </body>
