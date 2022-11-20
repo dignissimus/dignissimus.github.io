@@ -673,6 +673,23 @@ The cron job does not seem to be running. however, I have another idea. I can ru
 The Turing machine completed <b>three</b> (!) steps before crashing. I am very happy.
 <img src="https://i.imgur.com/uw7XDME.png"/>
 </p>
+<p>
+The error message is not that descriptive, it reads as follows
+</p>
+<pre>
+sed: -e expression #1, char 27: Invalid content of \{\}
+</pre>
+<p>
+I'm able to deduce that the line causing the error is the following
+</p>
+<pre class="lang-bash pygments" data-lang="bash">
+<span class="c1"># Replace the character under the read-write head with the output</span>
+<span class="c1"># from the state</span>
+<span class="nv">NEW_TAPE</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$TAPE</span> <span class="p">|</span> sed -e <span class="s2">&quot;s/\(.\)\{</span><span class="k">$((</span>LOCATION<span class="k">))</span><span class="s2">\}.\(.*\)/\1</span><span class="nv">$OUTPUT</span><span class="s2">\2/&quot;</span><span class="k">)</span>
+</pre>
+<p>
+I've just noticed the problem. You might be able to notice that in the above image, the Turing machine moves one to the right. So now it's in the second cell. Now it moves one to the left, it is back in the first cell. It then moves one to the left - it falls off the grid.
+</p>
         </article>
         
     </body>
