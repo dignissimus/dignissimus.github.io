@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Just Another Perl Hacker
+   </h1>
+   <summary>
+    <p>
+     <strong>28 June 2022</strong>
+    </p>
+   </summary>
+   <p>
+    I’ll be working with perl starting from next week so I spent
+yesterday learning it. Today is day two and I came up with the
+following.
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> feature <span class="ot">qw(</span>say<span class="ot">)</span>;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">*SHIFT</span>=<span class="kw">sub</span>{<span class="kw">return</span> <span class="kw">sub</span>{my<span class="dt">$shift</span>=<span class="fu">shift</span>;<span class="kw">sub</span>{</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="dt">$shift</span>}}<span class="kw">if</span> <span class="ot">not</span>(<span class="dv">1</span><span class="ot">-s</span>hift);<span class="kw">sub</span>{<span class="kw">sub</span>{<span class="fu">shift</span>}};}</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>;<span class="dt">*SUB</span>=<span class="kw">sub</span>{my<span class="dt">$shift</span>=<span class="fu">shift</span>;return<span class="dt">$shift</span>/(</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>SUBSHIFT-&gt;(SUBSHIFT(<span class="dv">0</span>)))<span class="kw">if</span> not<span class="dt">$shift</span> %</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>SUBSHIFT-&gt;(SHIFT-&gt;(<span class="dv">0</span>)-&gt;(<span class="dv">0</span>)-&gt;(SUBSHIFT-&gt;(<span class="dv">0</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>));SUBSHIFT-&gt;(SUBSHIFT-&gt;(SUBSHIFT-&gt;(SHIFT-&gt;</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>(<span class="dv">0</span>)-&gt;(<span class="dv">0</span>)-&gt;(SUBSHIFT-&gt;(<span class="dv">0</span>))))*<span class="dt">$shift</span>);}</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>;<span class="dt">*SUBSHIFT</span>=<span class="kw">sub</span>{<span class="fu">int</span>(<span class="fu">int</span>(<span class="fu">shift</span>)+<span class="dv">1</span>);};</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="dt">*SHIFTSUB</span>=<span class="kw">sub</span>{<span class="kw">my</span>(<span class="dt">$shift</span>,<span class="dt">$SHIFT</span>)=(<span class="fu">shift</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">shift</span>);SHIFT-&gt;(<span class="dt">$shift</span>)-&gt;(<span class="kw">sub</span>{<span class="dt">$SHIFT</span>})-&gt;(</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">sub</span>{SHIFTSUB-&gt;(SUB-&gt;(<span class="dt">$shift</span>),SUBSHIFT-&gt;(</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="dt">$SHIFT</span>))})-&gt;();};<span class="dt">*SHIFTSUBSHIFT</span>=<span class="kw">sub</span>{</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>SHIFTSUB-&gt;(<span class="fu">int</span>(<span class="fu">shift</span>),<span class="dv">0</span>)};<span class="fu">say</span> join<span class="ot">""</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">map</span>{<span class="fu">chr</span>}<span class="fu">map</span>{SHIFTSUBSHIFT-&gt;(<span class="wa">$_</span>)}(</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="dv">18889465931478580854784</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="dv">36893488147419103232</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="dv">1208925819614629174706176</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="dv">4722366482869645213696</span>);</span></code></pre>
+   </div>
+   <p>
+    Here’s a more deobfuscated version
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> feature <span class="ot">qw(</span>say<span class="ot">)</span>;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">*SHIFT</span> = <span class="kw">sub </span>{</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="kw">sub </span>{ <span class="kw">my</span> <span class="dt">$shift</span> = <span class="fu">shift</span>; <span class="kw">sub </span>{ <span class="dt">$shift</span>} } <span class="kw">if</span> <span class="ot">not</span> (<span class="dv">1</span> - <span class="fu">shift</span>);</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">sub </span>{ <span class="kw">sub </span>{ <span class="fu">shift</span> } };</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>};</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="dt">*SUB</span>  = <span class="kw">sub </span>{</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$shift</span> = <span class="fu">shift</span>;</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="dt">$shift</span> / (SUBSHIFT-&gt;(SUBSHIFT(<span class="dv">0</span>))) <span class="kw">if</span> <span class="ot">not</span> <span class="dt">$shift</span> % SUBSHIFT-&gt;(SHIFT-&gt;(<span class="dv">0</span>)-&gt;(<span class="dv">0</span>)-&gt;(SUBSHIFT-&gt;(<span class="dv">0</span>)));</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    SUBSHIFT-&gt;(SUBSHIFT-&gt;(SUBSHIFT-&gt;(SHIFT-&gt;(<span class="dv">0</span>)-&gt;(<span class="dv">0</span>)-&gt;(SUBSHIFT-&gt;(<span class="dv">0</span>)))) <span class="ot">*</span> <span class="dt">$shift</span>);</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>};</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="dt">*SUBSHIFT</span> = <span class="kw">sub </span>{</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">int</span> (<span class="fu">int</span>(<span class="fu">shift</span>) + <span class="dv">1</span>);</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>};</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="dt">*SHIFTSUB</span> = <span class="kw">sub </span>{</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> (<span class="dt">$shift</span>, <span class="dt">$SHIFT</span>) = (<span class="fu">shift</span>, <span class="fu">shift</span>);</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    SHIFT-&gt;(<span class="dt">$shift</span>)-&gt;(</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        <span class="kw">sub </span>{ <span class="dt">$SHIFT</span>}</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    )-&gt;(</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        <span class="kw">sub </span>{ SHIFTSUB-&gt;(SUB-&gt;(<span class="dt">$shift</span>), SUBSHIFT-&gt;(<span class="dt">$SHIFT</span>)) }</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    )-&gt;();</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>};</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="dt">*SHIFTSUBSHIFT</span> = <span class="kw">sub </span>{</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    SHIFTSUB-&gt;(<span class="fu">int</span>(<span class="fu">shift</span>), <span class="dv">0</span>)</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>};</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="fu">say</span> <span class="fu">join</span> <span class="ot">""</span>, <span class="fu">map</span> { <span class="fu">chr</span> } <span class="fu">map</span> { SHIFTSUBSHIFT-&gt;(<span class="wa">$_</span>) } (<span class="dv">18889465931478580854784</span>, <span class="dv">36893488147419103232</span>, <span class="dv">1208925819614629174706176</span>, <span class="dv">4722366482869645213696</span>);</span></code></pre>
+   </div>
+  </main>
+ </body>
+</html>

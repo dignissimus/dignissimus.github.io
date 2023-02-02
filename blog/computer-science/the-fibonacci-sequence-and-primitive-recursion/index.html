@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Efficiently calculating the Fibonacci sequence using primitive
+recursion
+   </h1>
+   <p>
+    Primitive recursive functions [1] are defined in terms of the initial
+functions. The initial functions are by definition primitive and
+include
+   </p>
+   <ul>
+    <li>
+     The nullary function \(n(x) = 0\)
+    </li>
+    <li>
+     The successor function \(s(x) = x + 1\)
+    </li>
+    <li>
+     Projection \(u^n_i(x_1, \dots, x_n) = x_i\)
+    </li>
+   </ul>
+   <p>
+    Further primitive recursive functions can be created via composition
+\(f \circ g\) and via primitive recursion.
+   </p>
+   <p>
+    For some total function \(g\) and constant \(k\), \(h\) is said to
+have been obtained from \(g\) via primitive recursion if
+   </p>
+   <p>
+    $$ \begin{align} h(0) &amp;= k\\ h(t + 1) &amp;= g(t, h(t))\\
+\end{align} $$
+   </p>
+   <p>
+    The smallest class of functions including the initial functions and
+is closed under primitive recursion defines the primitive recursive
+functions.
+   </p>
+   <p>
+    The Fibonacci sequence can be defined as follows
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>fib <span class="dv">0</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>fib <span class="dv">1</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>fib n <span class="ot">=</span> fib (n <span class="op">-</span> <span class="dv">1</span>) <span class="op">+</span> fib (n <span class="op">-</span> <span class="dv">2</span>)</span></code></pre>
+   </div>
+   <p>
+    This isn’t defined in terms of primitive recursion. The following
+definition, for example, does not make use primitive recursion
+   </p>
+   <p>
+    $$ \begin{align} \mathtt{fib}(0) &amp;= 0 \\ \mathtt{fib}(0) &amp;= 1
+\\ \mathtt{fib}(0) &amp;= \mathtt{fib}(n - 1) + \mathtt{fib}(n - 2)\\
+\end{align} $$
+   </p>
+   <p>
+    One thing to note is that this implementation is inefficient.
+   </p>
+   <p>
+    The <code>fib</code> function contains two recursive calls. If T(n)
+denotes the runtime of the <code>fib</code> function for a value, \(n\),
+then we now have
+   </p>
+   <p>
+    $$T(n) = T(n-1) + T(n-2)$$
+   </p>
+   <p>
+    This is a homogenous linear recurrence relation and can be solved in
+the standard way. Solving the recurrence relation reveals that this
+implementation of the Fibonacci runs in exponential time.
+   </p>
+   <p>
+    Observing that this defines recurrence relation also defines the
+Fibonacci sequence funnily implies that the runtime, \(T(n)\), of our
+function to calculate the value of the Fibonacci sequence at index \(n\)
+runs in \(O\left(F(n)\right)\) time where \(F\) refers to the value of
+the Fibonacci sequence at index \(n\).
+   </p>
+   <p>
+    However, the Fibonacci function is in fact primitive recursive. The
+primitive recursive solution comes about by noticing that every term of
+the Fibonacci sequence can be computed by only knowing the previous two
+values of the sequence.
+   </p>
+   <p>
+    So, define \(F’(n)\) to be \(\left&lt; F(n), F(n+1) \right&gt; \). We
+now have
+   </p>
+   <p>
+    $$ \begin{align} F’(0) &amp;= \left&lt;0, 1\right&gt; \\ F’(1) &amp;=
+\left&lt;1, 1\right&gt; \\ \end{align} $$
+   </p>
+   <p>
+    Since
+   </p>
+   <p>
+    $$ \begin{align} F’(n) &amp;= \left&lt; F(n), F(n+1)\right&gt; \\
+&amp;= \left&lt; F(n-1) + F(n - 2), F(n) + F(n - 1) \right&gt; \\ &amp;=
+\left&lt; F’(n-1)_2, F’(n-1)_1 + F(n-1)_2 \right&gt; \\ \end{align}
+$$
+   </p>
+   <p>
+    This is primitive recursive
+   </p>
+   <p>
+    $$ \begin{align} F(n) &amp;= F’(n)_1 \\ \end{align} $$
+   </p>
+   <p>
+    The primitive recursive functions are closed under composition and
+ordered pairs can be represented using Gödel coding so the Fibonacci
+sequence is primitive recursive and the Fibonacci sequence can be
+calculated in \(O(n)\) time.
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>fib <span class="ot">=</span> <span class="fu">fst</span> <span class="op">.</span> fib' <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  fib' <span class="dv">0</span> <span class="ot">=</span> (<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  fib' <span class="dv">1</span> <span class="ot">=</span> (<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  fib' n <span class="ot">=</span> (right, left <span class="op">+</span> right) <span class="kw">where</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    (left, right) <span class="ot">=</span> fib' (n <span class="op">-</span> <span class="dv">1</span>)</span></code></pre>
+   </div>
+   <ol type="1">
+    <li>
+     <em>Computability, Complexity and Languages</em>, Davis, Sigal,
+Weyuker
+    </li>
+   </ol>
+  </main>
+ </body>
+</html>
