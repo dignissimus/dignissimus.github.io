@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    My favourite proof
+   </h1>
+   <summary>
+    <p>
+     <strong>3 February 2023</strong>
+    </p>
+   </summary>
+   <p>
+    The <a href="https://en.wikipedia.org/wiki/Hypothetical_syllogism">Hypothetical
+syllogism</a> states that from \(b \rightarrow c\) and \(a \rightarrow
+b\), we can deduce \(a \rightarrow c\)
+   </p>
+   <p>
+    Alternatively, this is \((b \rightarrow c \land a \rightarrow b)
+\rightarrow a \rightarrow c\)
+   </p>
+   <p>
+    In words this represents “if a implies b, and b implies c, then a
+implies c”. In sequenct calculus the proof is as follows
+   </p>
+   <pre><code>1. (b -&gt; c, a -&gt; b)
+2. b -&gt; c            (conjunction-elimination-1, 1)
+3. a -&gt; b            (conjunction-elimination-2, 1)
+ | 4. a              (assumption)
+ | 5. b              (modus-ponens, 3, 4)
+ | 6. c              (modus-ponens, 2, 5)
+7. a -&gt; c            (implication-introduction, 4 to 6)</code></pre>
+   <p>
+    In Haskell, the proof is much shorter
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ghci<span class="op">&gt;</span> proof <span class="ot">=</span> <span class="fu">uncurry</span> (<span class="op">.</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ghci<span class="op">&gt;</span> <span class="op">:</span>t proof</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ot">proof ::</span> (b <span class="ot">-&gt;</span> c, a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> c</span></code></pre>
+   </div>
+   <ol type="1">
+    <li>
+     <a href="https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence">Curry-Howard
+Correspondence</a>
+    </li>
+   </ol>
+  </main>
+ </body>
+</html>
