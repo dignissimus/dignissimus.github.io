@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    I enjoy solving problems
+   </h1>
+   <summary>
+    <p>
+     <strong>20 February 2023</strong>
+    </p>
+   </summary>
+   <p>
+    Recently I created a startup-esque minimum viable product and I ran
+into problems I needed to solve and technical challenges I needed to
+overcome. The challenges I faced while building this product were
+different to a lot of the problems I’ve confronted myself with in the
+past because these problems were real.
+   </p>
+   <p>
+    To set the scene, I’m repeatedly searching through text, representing
+both words and documents as embeddings in a vector space. I’d like the
+user to enter a search term and bre presented with the most relevant
+documents. The naive solution would be to loop through every single item
+in the corpus, compute a relevancy score for each document, sort the
+documents by this relevancy score then select the most relevant
+documents. I didn’t actually try this because I knew this was slow and
+there’s a better solution. The problem here is that my code is running
+on is a dinky little machine with a small amount of memory and
+computational power. I had to increase the RAM on the machine because it
+could barely fit the Machine Learning models.
+   </p>
+   <p>
+    A better solution is maintaining a min-heap of the top results, I can
+now iterate through the documents and choose to insert elements into the
+min-heap when it has a better score than the current worst element.
+Asymptotically, this is really good and it worked well when I
+implemented it. The speed was good but you could notice that there was a
+delay in receiving results. This solution was good so I continued to
+build the rest of the product and decided to return to this later.
+   </p>
+   <p>
+    There were sysadmin tasks that I found quite fun to resolve. There
+was a mysterious issue where the server would periodically become
+unresponsive and solving it involved setting up nginx on my machine.
+Some of the small tasks were also really fun to carry out. I noticed
+that I was aware of details such as the start-up time, response time,
+memory usage of my web-server because they mattered, the server used to
+run out of memory on startup and it wouldn’t be able to complete
+requests.
+   </p>
+   <h2>
+    I love vectors
+   </h2>
+   <p>
+    So, there’s a much better solution for returning the best results and
+it involves a bit of linear algebra. In essence, I pre-compute the
+embeddings for the documents and combine them to create a tensor.
+Calculating every single relevancy metric can now all be done in one go
+as a single vectorisable tensor operation using einstein summation in
+numpy. I can now partition the results in \(O(n)\) to get the top
+results. The best part here is that I can now invoke highly-optimised C
+code, making my code even faster than before.
+   </p>
+  </main>
+ </body>
+</html>
