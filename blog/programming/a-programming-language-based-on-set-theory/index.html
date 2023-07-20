@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Speedrunning writing a programming language
+   </h1>
+   <summary>
+    <p>
+     <strong>12 April 2023</strong>
+    </p>
+   </summary>
+   <p>
+    I found a failed sleep-deprived speedrun to construct a programming
+language based on set theory. I never finished the speedrun because I
+fell a sleep but I list the final output below.
+   </p>
+   <hr>
+   <h1>
+    04:15
+   </h1>
+   <p>
+    Ok, so I’ve decided to pick Racket, a lisp dialect for this project
+because I’ve never written a Racket program before.
+   </p>
+   <h1>
+    05:05
+   </h1>
+   <p>
+    I’m slowly getting used to racket, this is what I currently have -
+I’ve defined a <code>many</code> combinator, a <code>any-of</code>
+combinator and a <code>leading-whitespace</code> combinator.
+   </p>
+   <pre class="racket"><code>#lang racket
+
+(struct parse-result (parsed remaining))
+
+(define (consume-whitespace str) 0
+  (if (char-whitespace? (string-ref str 0))
+    (consume-whitespace (substring str 1)) str))
+
+(define (parse-fail str) (parse-result 'nothing str))
+(define no-parse (parse-fail 'no-parse))
+(define (parse-nothing str) (parse-result (list) str))
+ 
+(define (many parser)
+  (lambda (str)
+    (define result (parser str))
+    (match result
+      [(parse-result 'nothing remaining) (parse-nothing remaining)]
+      [(parse-result parsed remaining) 
+        (define next-result ((many parser) remaining))
+        (match next-result
+          [(parse-result parsed_ remaining_) (parse-result (cons parsed parsed_) remaining_)])])))
+ 
+(define (parse-result-monoid-append left right)
+  (match left [(parse-result 'nothing _) right] [else left]))
+ 
+(define (apply-to x) (lambda (f) (f x)))
+ 
+(define (any-of . parsers)
+  (lambda (str)
+    (foldl parse-result-monoid-append no-parse (map (apply-to str) parsers))))
+ 
+(define (variable-assignment str) (parse-fail str))
+ 
+(define top-level-statement (any-of variable-assignment))
+
+(define (leading-whitespace parser)
+  (lambda (str)
+    (define str_ (consume-whitespace str))
+    (parser str_)))
+
+(define parse-program (leading-whitespace (many top-level-statement)))</code></pre>
+   <h1>
+    05:45
+   </h1>
+   <p>
+    This speedrun might be unsuccessful - I haven’t slept and I’m
+beginning to become tired. Alongside some other important bits, I’ve
+written the parser for variable assignment, it looks like this.
+   </p>
+   <pre class="racket"><code>(define (variable-assignment str)
+  (chain '(read-identifier read-equals read-expression)
+    (lambda (identifier equals expression) (variable-assignment-data identifier expression))))</code></pre>
+   <h1>
+    The end
+   </h1>
+   <p>
+    It’s the 20th of July and I’m looking back at what I’ve written - I
+still have some fun ideas for a set-theory based programming language so
+I hope I get time to come back to this soon. I list the program as I
+left it back in April.
+   </p>
+   <pre class="racket"><code>#lang racket
+
+(provide (all-defined-out))
+
+(struct program-state () #:inspector #f)
+(struct symbol (identifier) #:inspector #f)
+(struct identifier (name) #:inspector #f)
+(struct function-definition (identifier parameters expression) #:inspector #f)
+(struct parse-result (parsed remaining) #:inspector #f)
+(struct variable-assignment (identifier expression) #:inspector #f)
+(struct unary-operation (operator expression) #:inspector #f)
+(struct binary-operation (left operator right) #:inspector #f)
+(struct match-expression (pattern expression) #:inspector #f)
+
+(define (consume-whitespace str)
+  (match str
+    ["" ""]
+    [else (if (char-whitespace? (string-ref str 0))
+      (consume-whitespace (substring str 1)) str)]))
+
+(define (parse-fail str) (parse-result 'nothing str))
+(define no-parse (parse-fail 'no-parse))
+(define (parse-nothing str) (parse-result (list) str))
+
+(define (many parser)
+  (lambda (str)
+    (define result (parser str))
+    (match result
+      [(parse-result 'nothing remaining) (parse-nothing str)]
+      [(parse-result parsed remaining) 
+        (define next-result ((many parser) remaining))
+        (match next-result
+          [(parse-result 'nothing _) (parse-result (list parsed) remaining)]
+          [(parse-result parsed_ remaining_) (parse-result (cons parsed parsed_) remaining_)])])))
+
+(define (many1 parser)
+  (lambda (str)
+    (define result ((many parser) str))
+    (match result
+      [(parse-result '() _) no-parse]
+      [(parse-result _ _) result])))
+
+(define (parse-result-monoid-append left right)
+  (match left [(parse-result 'nothing _) right] [else left]))
+
+(define (apply-to x) (lambda (f) (f x)))
+
+(define (any-of . parsers)
+  (lambda (str)
+    (foldl parse-result-monoid-append no-parse (map (apply-to str) parsers))))
+
+(define (combine parsers)
+  (lambda (str)
+    (match parsers
+      ['() (parse-nothing str)]
+      [(cons p ps)
+        (define result (p str))
+        (match result
+          [(parse-result 'nothing _) no-parse]
+          [(parse-result parsed remaining)
+            (define result_ ((combine ps) remaining))
+            (match result_
+              [(parse-result 'nothing _) no-parse]
+              [(parse-result parsed_ remaining_) (parse-result (cons parsed parsed_) remaining_)])])])))
+
+(define (chain parsers f)
+  (lambda (str)
+    (define result ((combine parsers) str))
+    (match result
+      [(parse-result 'nothing _) no-parse]
+      [(parse-result parsed remaining)
+       (parse-result (apply f parsed) remaining)])))
+
+(define (parse-string literal)
+  (lambda (str)
+    (if (string-prefix? str literal)
+      (parse-result literal (substring str (string-length literal))) no-parse)))
+
+(define parse-character (compose parse-string string))
+
+(define alphanum (apply any-of (map parse-character (string-&gt;list "abcdefghijklmnopqrstuvwxyz0123456789"))))
+(define parse-identifier (many1 alphanum))
+(define parse-symbol (combine (list (parse-string "'") (many1 alphanum))))
+(define parse-equals (parse-string "="))
+(define (leading-whitespace parser)
+  (lambda (str)
+    (define str_ (consume-whitespace str))
+    (parser str_)))
+(define parse-string-leading-whitespace (compose leading-whitespace parse-string))
+(define (parse-set-body str) 
+  (define parser_ (many (leading-whitespace parse-expression)))
+  (parser_ str))
+(define parse-set
+  (chain (list (parse-string-leading-whitespace "{") parse-set-body (parse-string-leading-whitespace "}"))
+      (lambda (lb set-body rb) set-body)))
+(define bracketed-expression
+  (lambda (str)
+    (define parser
+      (chain (list (parse-string "(") parse-expression (parse-string ")"))
+        (lambda (lb expression rb) expression)))
+    (parser str)))
+
+(define (parse-any-string . strings) (apply any-of (map parse-string strings)))
+(define parse-unary-operator-symbol (parse-any-string "supremum"))
+(define parse-binary-operator-symbol (parse-any-string "\\" "union"))
+(define parse-unary-operator
+  (lambda (str)
+    (define parser (chain (list parse-unary-operator-symbol parse-expression) unary-operation))
+    (parser str)))
+(define parse-binary-operator
+  (lambda (str)
+    (define parser
+      (chain
+        (list (parse-string-leading-whitespace "(") parse-expression (leading-whitespace parse-binary-operator-symbol) parse-expression (parse-string-leading-whitespace ")"))
+        (lambda (lb left operator right rb) binary-operation left operator right)))
+    (parser str)))
+
+(define parse-match-expression
+  (lambda (str)
+    (define parser
+      (chain (list
+          (parse-string "match") (leading-whitespace parse-expression)
+          (parse-string-leading-whitespace "{")
+          (leading-whitespace match-expression-body)
+          (parse-string-leading-whitespace "}"))
+        (lambda (match expression lb body rb) (match-expression expression body))))
+    (parser str)))
+
+(define parse-expression
+  (any-of bracketed-expression parse-binary-operator
+          parse-match-expression parse-unary-operator
+          parse-identifier parse-symbol parse-set))
+
+(define parse-match-expression-pattern parse-set)
+(define match-expression-case
+  (chain (list
+           parse-match-expression-pattern
+           (parse-string-leading-whitespace "=&gt;")
+           (leading-whitespace parse-expression))
+    (lambda (pattern arrow expression) (match-expression pattern expression))))
+(define match-expression-body (many (leading-whitespace match-expression-case)))
+
+(define parse-variable-assignment
+  (chain (list parse-identifier (leading-whitespace parse-equals) (leading-whitespace parse-expression))
+    (lambda (identifier equals expression) (variable-assignment (string-join identifier "") expression))))
+
+(define parse-function-definition
+  (chain
+    (list
+      (parse-string "def ") parse-identifier
+      (parse-string-leading-whitespace "(") (many (leading-whitespace parse-identifier)) (parse-string-leading-whitespace ")")
+      (parse-string-leading-whitespace "=") (leading-whitespace parse-expression))
+    (lambda (def name lb parameters rb eq expression) (function-definition name parameters expression))))
+
+(define empty-state (program-state))
+(define (evaluation-step state program) state)
+(define (evaluate-program stream) (foldl evaluation-step empty-state stream))
+
+(define top-level-statement (leading-whitespace (any-of parse-variable-assignment parse-function-definition)))
+(define parse-program (many top-level-statement))</code></pre>
+  </main>
+ </body>
+</html>

@@ -26,29 +26,57 @@
  <body>
   <main>
    <h1>
-    Sam’s blog
+    The Type-Theoretic Axiom of Choice
    </h1>
+   <summary>
+    <p>
+     <strong>21 July 2023</strong>
+    </p>
+   </summary>
    <p>
-    Hi! This is a place for me to store various notes and thoughts on
-different topics.
+    I’ve been reading through the Homotopy Type Theory book [1] recently
+and it presented a theorem resembling the Axiom of Choice.
    </p>
    <p>
-    You can find me on GitHub here: <a href="https://github.com/dignissimus">https://github.com/dignissimus</a>
+    Due to the constructive nature of intuitionistic type theory, we get
+a choice-like theorem for free. For some type universe, \(\mathcal{U}\),
+types \(A, B\) in this universe and some relation \(R : A \rightarrow B
+\rightarrow \mathcal{U} \) on elements of these types, we can prove that
+if for every \(x : A\) there is \(y : B\) such that \(R(x, y)\) holds
+then there is a function \(f : A \rightarrow B\) such that for all \(x :
+A\), \(R(x, f(x))\) holds.
    </p>
-   <menu>
-    <ul>
-     <li>
-      <a href="/blog/programming/">Programming</a>
-     </li>
-     <li>
-      <a href="/blog/computer-science/">Computer Science</a>
-     </li>
-     <li>
-      <a href="/blog/random/">Random</a>
-     </li>
-    </ul>
-   </menu>
-   <hr>
+   <p>
+    Put precisely, the following type is inhabited \[\prod_{A, B :
+\mathcal{U}} \prod_{R : A \rightarrow B \rightarrow \mathcal{U}}
+\left(\prod_{x : A} \sum_{y : B} R(x, y) \right) \rightarrow \sum_{f : A
+\rightarrow B} \prod_{x : A} R(x, f(x)) \]
+   </p>
+   <p>
+    We show this by constructing a term, \(\mathtt{ac}\), that has this
+type. Clearly [2] we have
+   </p>
+   <p>
+    \[\mathtt{ac}_{A, B, R} = \lambda f. \left(\lambda x.
+\mathtt{pr}_{1}(f(x)), \lambda x. \mathtt{pr}_{1}(f(x))\right) \]
+   </p>
+   <p>
+    The following theorem involving <a href="https://ncatlab.org/nlab/show/bracket+type">propositional
+truncation</a> however does not hold.
+   </p>
+   <p>
+    \[ \prod_{A, B : \mathcal{U}} \prod_{R : A \rightarrow B \rightarrow
+\mathcal{U}} \left(\prod_{x : A} \left|\left|\sum_{y : B} R(x,
+y)\right|\right| \right) \rightarrow \left|\left|\sum_{f : A \rightarrow
+B} \prod_{x : A} R(x, f(x)) \right|\right| \]
+   </p>
+   <p>
+    [1]: Homotopy type theory: Univalent foundations of mathematics. The
+Univalent Foundations Program, Institute for Advanced Study
+   </p>
+   <p>
+    [2]: This is a joke
+   </p>
   </main>
  </body>
 </html>
