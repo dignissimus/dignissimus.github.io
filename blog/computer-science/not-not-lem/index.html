@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Intuitionistic Excluded Middle, Glivenko’s theorem and the
+Gödel-Gentzen translation
+   </h1>
+   <summary>
+    <p>
+     <strong>4 January 2024</strong>
+    </p>
+   </summary>
+   <p>
+    In intuitionistic logic, <a href="https://en.wikipedia.org/wiki/Law_of_excluded_middle">the law of
+the excluded middle</a> doesn’t hold even though it is valid in
+classical logic. That being said, its double negation does hold and we
+can prove that the negation of the excluded middle isn’t true. In other
+words, we have a term
+\[\mathtt{not}\text{-}\mathtt{not}\text{-}\mathtt{lem} : \lnot \lnot
+\prod_{A : \mathcal{U}} A + \lnot A\]
+   </p>
+   <p>
+    With a bit of thought, we can actually construct such a term in
+Haskell
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Void</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Not</span> a <span class="ot">=</span> a <span class="ot">-&gt;</span> <span class="dt">Void</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">notNotLem ::</span> <span class="dt">Not</span> (<span class="dt">Not</span> (<span class="dt">Either</span> a (<span class="dt">Not</span> a))</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>notNotLem <span class="ot">=</span> \f <span class="ot">-&gt;</span> f (<span class="dt">Right</span> <span class="op">$</span> \x <span class="ot">-&gt;</span> f <span class="op">$</span> <span class="dt">Left</span> x)</span></code></pre>
+   </div>
+   <p>
+    And if you think about it for a bit, you get the following equivalent
+definition.
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">notNotLem ::</span> <span class="dt">Not</span> (<span class="dt">Not</span> (<span class="dt">Either</span> a (<span class="dt">Not</span> a))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>notNotLem <span class="ot">=</span> (<span class="op">.</span> <span class="dt">Right</span>) <span class="op">&lt;*&gt;</span> (<span class="op">.</span> <span class="dt">Left</span>)</span></code></pre>
+   </div>
+   <p>
+    Where <code>&lt;*&gt;</code> is the S combinator from the <a href="https://en.wikipedia.org/wiki/SKI_combinator_calculus">SKI
+combinator calculus</a> and the relevant term in type theory is
+\(\lambda f. f (\mathtt{inr\ } \lambda x. f (\mathtt{inl\ } x))\).
+   </p>
+   <p>
+    There are more of these results: for example <a href="https://en.wikipedia.org/wiki/Double_negation#Elimination_and_introduction">double
+negation elimination</a> also holds in classical logic but fails to hold
+in intuitionistic logic yet the double negation of double negation
+elimination is a valid sentence in intuitionistic logic. You can also
+define these results in Haskell.
+   </p>
+   <div class="sourceCode" id="cb3">
+    <pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">negationIntroduction ::</span> a <span class="ot">-&gt;</span> <span class="dt">Not</span> (<span class="dt">Not</span> a)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>negationIntroduction <span class="ot">=</span> \x <span class="ot">-&gt;</span> \f <span class="ot">-&gt;</span> f x</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>negationIntroduction <span class="ot">=</span> <span class="fu">flip</span> (<span class="op">$</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ot">negationElimination ::</span> <span class="dt">Not</span> (<span class="dt">Not</span> (<span class="dt">Not</span> (<span class="dt">Not</span> a) <span class="ot">-&gt;</span> a))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>negationElimination <span class="ot">=</span> \f <span class="ot">-&gt;</span> f negationIntroduction</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>negationElimination <span class="ot">=</span> (<span class="op">$</span> negationIntroduction)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>negationElimination <span class="ot">=</span> (<span class="op">$</span> <span class="fu">flip</span> (<span class="op">$</span>))</span></code></pre>
+   </div>
+   <p>
+    In classical logic we have double negation elimination as a theorem,
+so if the double negation of a statement holds in intuitionistic logic
+then we can prove the statement in classical logic by applying double
+negation elimination.
+   </p>
+   <p>
+    But does the converse hold? That is, if we can prove a theorem in
+classical logic, can we prove its double negation in intuitionistic
+logic? Or, if \(A\) holds in classical logic, can we prove \(\lnot \lnot
+A\) in intuitionistic logic?
+   </p>
+   <p>
+    The answer to this question is yes and it is precisely the content of
+<a href="https://en.wikipedia.org/wiki/Double-negation_translation#Propositional_logic">Glivenko’s
+theorem</a>. We can construct such proofs via the <a href="https://en.wikipedia.org/wiki/Double-negation_translation#First-order_logic">Gödel–Gentzen
+translation</a>.
+   </p>
+   <p>
+    While we can prove this theorem and construct the translation by
+induction on the terms of both logics, there is a more elegant way to
+reason about this.
+   </p>
+   <p>
+    Intuitionistic logic is the internal logic of <a href="https://ncatlab.org/nlab/show/Heyting+algebra#definition">Heyting
+categories</a> and classical logic is the internal logic of <a href="https://ncatlab.org/nlab/show/Boolean+algebra#definitions">Boolean
+categories</a>.
+   </p>
+   <p>
+    Using this, we can construct functors between boolean algebras and
+heyting algebras which correspond to syntactic translations between the
+two logics. The double negation translation becomes a functor that
+preserves meets and exponentials and the proof of Glivenko’s theorem is
+the existence of this functor.
+   </p>
+  </main>
+ </body>
+</html>
