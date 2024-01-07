@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    In a complete graph where edges are assigned one of two colours,
+there is a colour such that any two vertices are connected by a path of
+this colour with length at most three.
+   </h1>
+   <summary>
+    <p>
+     <strong>14 August 2023</strong>
+    </p>
+   </summary>
+   <p>
+    I found a question on the Mathematics Stack Exchange page [1] with
+the following problem statement.
+   </p>
+   <blockquote>
+    <p>
+     All edges of a complete graph are colored: each edge with a red or
+blue color. Show that there exists a color such that every two vertices
+can be connected by a path with edges of this color of length at most
+3.
+    </p>
+   </blockquote>
+   <p>
+    I attempted the question and my proof was different to the accepted
+answer.
+   </p>
+   <h1>
+    Theorem
+   </h1>
+   <p>
+    All edges of a complete graph are colored: each edge with a red or
+blue color. Show that there exists a color such that every two vertices
+can be connected by a path with edges of this color of length at most
+3.
+   </p>
+   <h1>
+    Proof
+   </h1>
+   <p>
+    The colourings of the edges define two subgraphs that are
+complements, so at least one of these subgraphs is connected. In the
+case where only one of the colours define a connected subgraph then
+choose this colour and look at the complement of the graph that this
+colouring defines. If two vertices are in separate connected components
+in the complement graph then these two vertices are connected by a path
+of length one in the original graph indicating that there is an edge
+between these two vertices of the chosen colour. If these vertices, (u,
+v), are otherwise in the same connected component in the complement
+graph then as the complement graph is disconnected, there is a vertex,
+(w), in a different connected component and there is no edge between
+either of these vertices to (w) in the complement so there are thus
+edges (uw) and (wv) in the subgraph defined by this colour so there is a
+path of this colour of length less than 3, namely (uwv). In both cases,
+we have constructed a path of length three or less so we are done.
+   </p>
+   <p>
+    If both of these subgraphs are connected then select an arbitrary
+color. If this colour connects every two vertices with a path of length
+at most three then we are done. If, however, this is not the case then I
+will show that the other colour joins all vertices with paths of length
+at most 3.
+   </p>
+   <p>
+    [1]:
+https://math.stackexchange.com/questions/4751852/edges-of-a-complete-graph-have-one-of-2-colors-prove-that-every-two-vertices
+   </p>
+  </main>
+ </body>
+</html>
