@@ -26,34 +26,34 @@
  <body>
   <main>
    <h1>
-    Computer Science
+    Every infinite c.e. set has an infinite computable subset
    </h1>
+   <summary>
+    <p>
+     <strong>7 May 2024</strong>
+    </p>
+   </summary>
    <p>
-    Anything broadly related to computer science
+    I initially solved this by taking the complement and proving the
+equivalent statement that every co-c.e. set whose complement is infinite
+has an infinite computable superset.
    </p>
-   <ul>
-    <li>
-     <a href="/blog/computer-science/every-infinite-ce-set-has-an-infinite-computable-subset">Every
-infinite c.e. set has an infinite computable subset</a>
-    </li>
-    <li>
-     <a href="/blog/computer-science/not-not-lem/">Intuitionistic
-Excluded Middle, Glivenko’s theorem and the Gödel-Gentzen
-translation</a>
-    </li>
-    <li>
-     <a href="/blog/computer-science/the-type-theoretic-axiom-of-choice/">The
-Type-Theoretic Axiom of Choice</a>
-    </li>
-    <li>
-     <a href="/blog/programming/my-favourite-proof/">My favourite
-proof</a>
-    </li>
-    <li>
-     <a href="/blog/computer-science/the-fibonacci-sequence-and-primitive-recursion/">The
-Fibonacci sequence and primitive recursion</a>
-    </li>
-   </ul>
+   <p>
+    Broadly, the idea is to dovetail against each number with a twist.
+Since our set is co-c.e., we have a partial decider for whether a number
+is not in our set. We dovetail using this while also counting steps and
+an “upper-bound” for termination. After computation on a number of
+terminates, we reject this number as it is clearly not in our co-c.e.
+set, take note of the number of computation steps it has completed and
+accept the next number that doesn’t terminate within this number of
+steps.
+   </p>
+   <p>
+    This solution is convoluted though and we can do it by fixing a
+computable enumeration of our c.e. set and considering all numbers \(n\)
+that satisfy \(f(n) &gt; f(m)\) for all \(m &lt; n\) which is much
+simpler.
+   </p>
   </main>
  </body>
 </html>
