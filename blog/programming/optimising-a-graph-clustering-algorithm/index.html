@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Optimising a Graph Clustering Algorithm
+   </h1>
+   <summary>
+    <p>
+     <strong>7 May 2024</strong>
+    </p>
+   </summary>
+   <p>
+    Recently, I was tasked to get the highest performance possible on the
+<a href="https://github.com/ECP-ExaGraph/miniVite">miniVite</a>
+microbenchmark. MiniVite is a slimmed-down version of <a href="https://github.com/ECP-ExaGraph/vite">Vite</a> which implements
+the Louvain method for community detection and graph clustering.
+   </p>
+   <p>
+    The <a href="https://en.wikipedia.org/wiki/Louvain_method">Louvain
+method</a> is composed of two phases and miniVite only implements the
+first phase of the algorithm. This phase aggregates vertices into
+communities by locally optimising the <a href="https://en.wikipedia.org/wiki/Modularity_%28networks%29">modularity</a>
+metric which measures how well a graph is clustered into communities.
+The algorithm works by incremental improvement, at each step it moves a
+vertex into the community that leads to the largest increase in the
+modularity metric.
+   </p>
+   <p>
+    I was working on Arm hardware so the first course of action was to
+use the armclang compiler and the <a href="https://developer.arm.com/Tools%20and%20Software/Arm%20Performance%20Libraries">Arm
+Performance Library</a> implementation of <a href="https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms">BLAS</a>
+which already gave us a speed up.
+   </p>
+   <p>
+    The miniVite code contains some <code>TODO</code> comments so these
+were the first targets for tinkering with the code. The first of which
+concerned using TBB’s <a href="https://oneapi-src.github.io/oneTBB/main/tbb_userguide/concurrent_vector_ug.html"><code>concurrent_vector</code></a>
+and the second of which concerned parallelising a for loop wih <a href="https://www.openmp.org/">OpenMP</a>.
+   </p>
+   <p>
+    Algorithmically, we found two enhancements on a different branch
+which we were able to incorporate into our local build. The first
+enhancement involved implementing an on-stack hashmap for small graph
+segments: this is in contrast to the dynamically allocated hashmap that
+is used by default.
+   </p>
+   <p>
+    The second enhancement involved calculating the increase in
+modularity differently. For every vertex, the Louvain method sums values
+for each of the vertex’s neighbours and aggregates these values based on
+each of the neighbouring vertices’ current community.
+   </p>
+   <p>
+    Naively, we can implement this by summing values in a hashmap where
+the key is a hash for the neighbouring vertex’s community. However, for
+small graph segments we can sort the adjacency array by community so
+that vertices in the same community become adjacent in contiguous
+blocks. We can now find the community that maximises the increase in the
+modularity metric by performing a linear scan across the array which
+eliminates the random access from the previous implementation which is
+much better for the pre-fetcher.
+   </p>
+   <p>
+    Putting everything together, I achieved about a 10x performance boost
+for the selected problem instances. We had the best results from this
+challenge and the entire competition was so much fun.
+   </p>
+  </main>
+ </body>
+</html>
