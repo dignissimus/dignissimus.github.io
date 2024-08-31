@@ -61,8 +61,11 @@ into the kernel address space.
    <p>
     Which caused me to ask “why?”. If I only care about performance and
 have no regard for security, what’s stopping me from rewriting the
-kernel to allow me to do this? I turned 18 just over two years ago and I
-would like to use my freedom as an adult to hack the kernel.
+kernel to allow me to do this?
+   </p>
+   <p>
+    I turned 18 just over two years ago and I would like to use my
+freedom as an adult to hack the kernel.
    </p>
    <p>
     I have lots of directions I want to go with exploring the kernel but
@@ -131,7 +134,7 @@ git repository.
    </p>
    <p>
     Inside <code>linux/file.fs</code> I found <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/fs.h?id=1934261d897467a924e2afd1181a74c1cbfa2c1d#n2671">filp_open</a>
-which returns a pointer to a <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/fs.h?id=1934261d897467a924e2afd1181a74c1cbfa2c1d#n996"><code>file</code>
+which returns a pointer to a <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/fs.h?id=1934261d897467a924e2afd1181a74c1cbfa2c1d#n996">file
 struct</a> whose definition looks a bit like this.
    </p>
    <div class="sourceCode" id="cb2">
@@ -231,7 +234,10 @@ benchmark performance and <code>kzalloc</code> to allocate memory.
    </p>
    <p>
     After running both of the benchmarks I found that I got about a 1.2x
-speedup from writing my code in kernel space. Cool!
+speedup from writing my code in kernel space.
+   </p>
+   <p>
+    Cool!
    </p>
   </main>
  </body>
