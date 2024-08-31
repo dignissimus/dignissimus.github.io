@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Writing a kernel module for speed and profit
+   </h1>
+   <summary>
+    Having fun in kernel space
+   </summary>
+   <br>
+   <p>
+    <strong>7 May 2024</strong>
+   </p>
+   <br>
+   <p>
+    Recently, I was thinking about the <a href="https://en.wikipedia.org/wiki/VDSO">vDSO</a> or the Virtual
+Dynamic Shared Object System in the linux kernel which allows you to
+export kernel space routines in user space.
+   </p>
+   <p>
+    vDSO allows you to use system calls while avoiding the additional
+latency incurred by switching into kernel space and I was interested in
+exporting some system calls using vDSO myself.
+   </p>
+   <p>
+    I was reading <a href="https://lwn.net/Articles/615809/">an article
+from lwn.net</a> about implementing virtual system calls and it
+contained the following sentence
+   </p>
+   <blockquote>
+    <p>
+     Clearly, only “read-only” system calls are valid candidates for this
+type of emulation because user-space processes are not allowed to write
+into the kernel address space.
+    </p>
+   </blockquote>
+   <p>
+    Which caused me to ask “why?”. If I only care about performance and
+have no regard for security, what’s stopping me from rewriting the
+kernel to allow me to do this? I turned 18 just over two years ago and I
+would like to use my freedom as an adult to hack the kernel.
+   </p>
+   <p>
+    I have lots of directions I want to go with exploring the kernel but
+today I decided to write a kernel module and benchmark the speed
+improvements I get by performing syscalls while in kernel mode. This
+short project was spurred by a crazy idea of “there can’t be any cost of
+moving into kernel mode if we are already in kernel mode to begin
+with”.
+   </p>
+   <p>
+    While learning how to do the things I wanted to do, I encountered
+many warning about how certain operations are usually inadvisable. For
+example, one of the questions I had was “how do I open files in kernel
+mode?” and the most common answer was “don’t”.
+   </p>
+   <p>
+    <img src="/blog/images/that-sign-cant-stop-me.jpg" title="I ignored every warning telling me to not open files in kernel space" alt="I ignored every warning telling me to not open files in kernel space">
+   </p>
+   <h1>
+    God bless curiosity
+   </h1>
+   <p>
+    I decided that I want to benchmark writing to a file in user space
+against writing to a file in kernel space.
+   </p>
+   <p>
+    My C code for writing in userspace is pretty basic, it looks like
+this:
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;fcntl.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;sys/time.h&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;unistd.h&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span> total <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> it <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> it <span class="op">&lt;</span> <span class="dv">128</span><span class="op">;</span> it<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> fd <span class="op">=</span> open<span class="op">(</span><span class="st">"/home/sam/writespeed"</span><span class="op">,</span> O_CREAT <span class="op">|</span> O_WRONLY<span class="op">,</span> <span class="bn">0777</span><span class="op">);</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="dt">char</span> <span class="op">*</span>buffer <span class="op">=</span> calloc<span class="op">(</span><span class="dv">1024</span><span class="op">,</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> timeval start<span class="op">,</span> end<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        gettimeofday<span class="op">(&amp;</span>start<span class="op">,</span> NULL<span class="op">);</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">100</span> <span class="op">*</span> <span class="dv">1024</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>            write<span class="op">(</span>fd<span class="op">,</span> buffer<span class="op">,</span> <span class="dv">1024</span><span class="op">);</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        gettimeofday<span class="op">(&amp;</span>end<span class="op">,</span> NULL<span class="op">);</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        close<span class="op">(</span>fd<span class="op">);</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> diff <span class="op">=</span> <span class="op">(</span>end<span class="op">.</span>tv_sec <span class="op">-</span> start<span class="op">.</span>tv_sec<span class="op">)</span> <span class="op">*</span> <span class="dv">1000000</span> <span class="op">+</span> end<span class="op">.</span>tv_usec <span class="op">-</span> start<span class="op">.</span>tv_usec<span class="op">;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        total <span class="op">+=</span> diff<span class="op">;</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    printf<span class="op">(</span><span class="st">"microseconds: </span><span class="sc">%llu</span><span class="st">"</span><span class="op">,</span> total <span class="op">/</span> <span class="dv">128</span><span class="op">);</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
+   </div>
+   <p>
+    My buffer size is 1kb which is pretty small but I’ll use the same
+buffer size when writing in kernel mode.
+   </p>
+   <h1></h1>
+   <p>
+    So the linux kernel is open source meaning I have all the
+documentation I need in the <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/"><code>torvalds/linux</code></a>
+git repository.
+   </p>
+   <p>
+    Inside <code>linux/file.fs</code> I found <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/fs.h?id=1934261d897467a924e2afd1181a74c1cbfa2c1d#n2671">filp_open</a>
+which returns a pointer to a <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/fs.h?id=1934261d897467a924e2afd1181a74c1cbfa2c1d#n996"><code>file</code>
+struct</a> whose definition looks a bit like this.
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> file <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> callback_head    f_task_work<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> llist_node   f_llist<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">unsigned</span> <span class="dt">int</span>        f_iocb_flags<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    spinlock_t      f_lock<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    fmode_t         f_mode<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    atomic_long_t       f_count<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> mutex        f_pos_lock<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    loff_t          f_pos<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">int</span>        f_flags<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> fown_struct  f_owner<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">const</span> <span class="kw">struct</span> cred   <span class="op">*</span>f_cred<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> file_ra_state    f_ra<span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> path     f_path<span class="op">;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> inode        <span class="op">*</span>f_inode<span class="op">;</span>   <span class="co">/* cached value */</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">const</span> <span class="kw">struct</span> file_operations    <span class="op">*</span>f_op<span class="op">;</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    u64         f_version<span class="op">;</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span>            <span class="op">*</span>private_data<span class="op">;</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* Used by fs/eventpoll.c to link all the hooks to this file */</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> hlist_head   <span class="op">*</span>f_ep<span class="op">;</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> address_space    <span class="op">*</span>f_mapping<span class="op">;</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    errseq_t        f_wb_err<span class="op">;</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    errseq_t        f_sb_err<span class="op">;</span> <span class="co">/* for syncfs */</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
+   </div>
+   <p>
+    It contains some kernel data structures like the spinlock, mutex and
+inode. The structure definition also contains some data related to the
+<a href="https://en.wikipedia.org/wiki/Epoll">epoll</a> syscall.
+   </p>
+   <p>
+    I found the <code>kernel_write</code> function and I use it to write
+to the file. My kernel module looks like this:
+   </p>
+   <div class="sourceCode" id="cb3">
+    <pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;linux/init.h&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;linux/module.h&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;linux/uaccess.h&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;linux/fs.h&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;linux/proc_fs.h&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;linux/fcntl.h&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;linux/kernel.h&gt;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;linux/syscalls.h&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;asm/uaccess.h&gt;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>MODULE_AUTHOR<span class="op">(</span><span class="st">"Sam Ezeh"</span><span class="op">);</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>MODULE_DESCRIPTION<span class="op">(</span><span class="st">"Hello world driver"</span><span class="op">);</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>MODULE_LICENSE<span class="op">(</span><span class="st">"GPL"</span><span class="op">);</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">int</span> __init custom_init<span class="op">(</span><span class="dt">void</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    printk<span class="op">(</span>KERN_INFO <span class="st">"Loaded write module"</span><span class="op">);</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span> total <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> it <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> it <span class="op">&lt;</span> <span class="dv">128</span><span class="op">;</span> it<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> file <span class="op">*</span> filp <span class="op">=</span> filp_open<span class="op">(</span><span class="st">"/home/sam/writespeed"</span><span class="op">,</span> O_CREAT <span class="op">|</span> O_WRONLY<span class="op">,</span> <span class="bn">0777</span><span class="op">);</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span> <span class="op">*</span>buffer <span class="op">=</span> kzalloc<span class="op">(</span><span class="dv">1024</span><span class="op">,</span> GFP_KERNEL <span class="op">|</span> __GFP_HIGH <span class="op">|</span> GFP_ATOMIC<span class="op">);</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        u64 start <span class="op">=</span> ktime_get_ns<span class="op">();</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        loff_t pos <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">100</span> <span class="op">*</span> <span class="dv">1024</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>            kernel_write<span class="op">(</span>filp<span class="op">,</span> buffer<span class="op">,</span> <span class="dv">1024</span><span class="op">,</span> <span class="op">&amp;</span>pos<span class="op">);</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        u64 end <span class="op">=</span> ktime_get_ns<span class="op">();</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> diff <span class="op">=</span> <span class="op">(</span>end <span class="op">-</span> start<span class="op">);</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        total <span class="op">+=</span> diff<span class="op">;</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        kfree<span class="op">(</span>buffer<span class="op">);</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        filp_close<span class="op">(</span>filp<span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>string <span class="op">=</span> <span class="op">(</span><span class="dt">char</span> <span class="op">*)</span> kzalloc<span class="op">(</span><span class="dv">128</span><span class="op">,</span> GFP_KERNEL <span class="op">|</span> __GFP_HIGH <span class="op">|</span> GFP_ATOMIC<span class="op">);</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    sprintf<span class="op">(</span>string<span class="op">,</span> KERN_INFO <span class="st">"microseconds: </span><span class="sc">%lld</span><span class="st">"</span><span class="op">,</span> <span class="op">(</span>total <span class="op">/</span> <span class="dv">1000</span><span class="op">)</span> <span class="op">/</span> <span class="dv">128</span><span class="op">);</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    printk<span class="op">(</span>string<span class="op">);</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    kfree<span class="op">(</span>string<span class="op">);</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">void</span> __exit custom_exit<span class="op">(</span><span class="dt">void</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    printk<span class="op">(</span>KERN_INFO <span class="st">"Exiting write module"</span><span class="op">);</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>module_init<span class="op">(</span>custom_init<span class="op">);</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>module_exit<span class="op">(</span>custom_exit<span class="op">);</span></span></code></pre>
+   </div>
+   <p>
+    Something that I found interesting about writing kernel code was that
+I couldn’t use libc. For example, <code>gettimeofday</code> didn’t exist
+while doing kernal development and neither did <code>malloc</code>. I
+had to use <code>ktime_get_ns</code> to get the time in order to
+benchmark performance and <code>kzalloc</code> to allocate memory.
+   </p>
+   <p>
+    After running both of the benchmarks I found that I got about a 1.2x
+speedup from writing my code in kernel space. Cool!
+   </p>
+  </main>
+ </body>
+</html>
