@@ -104,10 +104,9 @@ p^3\right) + p\left(\left(1 - p\right)^3 + 3\left(1 - p\right)^2p
    </p>
    <p>
     In general for an \(n\)-bit predictor we mispredict with probability
-\[ \left(p \sum_{i = 1}^{\lfloor \frac{n + 1}{2} \rfloor} (1 -
-p)^ip^{\lfloor \frac{n + 1}{2} \rfloor - i} \right) + \left( (1 - p)
-\sum_{i = 1}^{\lfloor \frac{n + 1}{2} \rfloor} p^i(1 - p)^{\lfloor
-\frac{n + 1}{2} \rfloor - i} \right) \]
+\[ \left(p \sum_{i = 1}^{\lceil \frac{n}{2} \rceil} (1 - p)^ip^{n - i}
+\right) + \left( (1 - p) \sum_{i = 1}^{\lceil \frac{n}{2} \rceil} p^i(1
+- p)^{n - i} \right) \]
    </p>
    <p>
     I’m not sure if there’s a nice closed-form for this but we can use
@@ -142,16 +141,17 @@ since, no matter what the branch prediction strategy is, we will
 mispredict with a probability of 50%.
    </p>
    <p>
-    Putting all of this together, we get the following result
+    Measuring mispredicts using <code>perf</code> and putting all of this
+together, we get the following result.
    </p>
    <p>
     <img src="/blog/images/mispredict-results.png" title="Mispredict probability against Branch Probability" alt="Mispredict probability against Branch Probability">
    </p>
    <p>
-    Using my approximation from earlier, we find that a \(13\)-bit
-counter best models the performance of my CPU on this workload which
-motivates a cool measure of branch predictor performance on a workload
-in terms of \(n\)-bit counters.
+    Using my approximation from earlier, we find that a \(14\)-bit
+counter best models the performance of my CPU on this particular
+workload which motivates a cool measure of branch predictor performance
+on a workload in terms of \(n\)-bit counters.
    </p>
    <p>
     <img src="/blog/images/mispredict-final.png" title="Mispredict probability against Branch Probability" alt="Mispredict probability against Branch Probability">
