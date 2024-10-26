@@ -136,13 +136,15 @@ our if statement and those from other causes.
 running the code with <code>PROBABILITY</code> set to either 0 or 1 and
 we can estimate the total number of branches from our if statement using
 our approximation for the mispredict probability above by running the
-code with <code>PROBABILITY</code> set to 50% and multiplying it by 2
-since, no matter what the branch prediction strategy is, we will
-mispredict with a probability of 50%.
+code with <code>PROBABILITY</code> set to 50% and multiplying the number
+of mispredicts caused by our branch by \(2\) since, no matter what the
+branch prediction strategy is, we will mispredict with a probability of
+50%.
    </p>
    <p>
-    Measuring mispredicts using <code>perf</code> and putting all of this
-together, we get the following result.
+    After disabling compile optimisations to make sure the compiler
+doesn’t eliminate the branch and measuring mispredicts using
+<code>perf</code>, we get the following result.
    </p>
    <p>
     <img src="/blog/images/mispredict-results.png" title="Mispredict probability against Branch Probability" alt="Mispredict probability against Branch Probability">
