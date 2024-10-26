@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Modelling branch mispredicts
+   </h1>
+   <summary></summary>
+   <br>
+   <p>
+    <strong>26 October 2024</strong>
+   </p>
+   <br>
+   <p>
+    I was bored so I decided to benchmark some C code.
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#ifndef PROBABILITY</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#define PROBABILITY </span><span class="dv">50</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#endif</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    srand<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">volatile</span> <span class="dt">int</span> total <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">27</span><span class="op">);</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span> </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>rand<span class="op">()</span> <span class="op">&lt;</span> RAND_MAX <span class="op">/</span> <span class="dv">100</span> <span class="op">*</span> PROBABILITY<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>             <span class="op">++</span>total<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
+   </div>
+   <p>
+    In the ideal case, we always predict the most likely branch so if our
+branch probability is \(p\) we mispredict with probabiility \(\min \{p,
+1 - p\} \) which looks like this on a graph.
+   </p>
+   <p>
+    <img src="/blog/images/best-case.png" title="In the ideal case, we always predict the most likely branch" alt="In the ideal case, we always predict the most likely branch">
+   </p>
+   <p>
+    The simplest way we can approximate this is by maintaining a history
+of branch results and observing the most common result. This is also
+known as a saturating counter which was used in the Intel Pentium.
+   </p>
+   <p>
+    If we have a 1-bit predictor, the probability of a mispredict is the
+probability we branch now but we didn’t branch in the previous case or
+we don’t branch now but we branched in the previous case which is \(2p(1
+- p)\)
+   </p>
+   <p>
+    <img src="/blog/images/1-bit.png" title="Mispredict probability for a 1-bit saturating counter" alt="Mispredict probability for a 1-bit saturating counter">
+   </p>
+   <p>
+    If we have a 3-bit predictor then the probability of a mispredict is
+the probability that the most common path taken out of the previous 3
+runs is not the one we take now. This is the probability that we
+either
+   </p>
+   <ul>
+    <li>
+     branched twice or more but not now
+    </li>
+    <li>
+     branched once or less and branched now
+    </li>
+   </ul>
+   <p>
+    The first case happens with probability \((1 - p)\left(3p^2\left(1 -
+p\right) + p^3\right)\) and the second case happens with probability
+\(p\left(\left(1 - p\right)^3 + 3\left(1 - p\right)^2p \right)\) so the
+probability of a mispredict is \( (1 - p)\left(3p^2\left(1 - p\right) +
+p^3\right) + p\left(\left(1 - p\right)^3 + 3\left(1 - p\right)^2p
+\right)\). Together these all look like these on a graph.
+   </p>
+   <p>
+    <img src="/blog/images/mispredict-all.png" title="Mispredict probability against Branch Probability" alt="Mispredict probability against Branch Probability">
+   </p>
+   <p>
+    In general for an \(n\)-bit predictor we mispredict with probability
+\[ \left(p \sum_{i = 1}^{\lfloor \frac{n + 1}{2} \rfloor} (1 -
+p)^ip^{\lfloor \frac{n + 1}{2} \rfloor - i} \right) + \left( (1 - p)
+\sum_{i = 1}^{\lfloor \frac{n + 1}{2} \rfloor} p^i(1 - p)^{\lfloor
+\frac{n + 1}{2} \rfloor - i} \right) \]
+   </p>
+   <p>
+    I’m not sure if there’s a nice closed-form for this but we can use
+the central limit theorem to approximate the number of times we branch.
+If \(X\) is a random variable representing the number of times we branch
+after \(n\) iterations then we mispredict with probability that is
+around \[ \begin{align*} pP\left(X &lt; \frac{n}{2}\right) + \left(1 -
+p\right)P\left(X &gt; \frac{n}{2}\right) &amp;= pP\left(X &lt;
+\frac{n}{2}\right) + \left(1 - p\right)\left(1 - P\left(X &lt;
+\frac{n}{2}\right)\right) \\ &amp;= pP\left(X &lt; \frac{n}{2}\right) +
+\left(1 - p\right)\left(1 - P\left(X &lt; \frac{n}{2}\right)\right) \\
+&amp;= \left(1 - 2p\right)P\left(X \geq \frac{n}{2}\right) + p \\
+&amp;\approx \left(1 - 2p\right)\left(1 - \Phi\left(\frac{n\left(1 -
+2p\right)}{2\sqrt{np\left(1 - p\right)}}\right)\right) + p \end{align*}
+\]
+   </p>
+   <p>
+    Where \(\Phi(x)\) is the CDF for the standard normal
+distribution.
+   </p>
+   <p>
+    We can model the number of mispredicts as the sum of mispredicts from
+our if statement and those from other causes.
+   </p>
+   <p>
+    We can estimate the number of mispredicts from other causes by
+running the code with <code>PROBABILITY</code> set to either 0 or 1 and
+we can estimate the total number of branches from our if statement using
+our approximation for the mispredict probability above by running the
+code with <code>PROBABILITY</code> set to 50% and multiplying it by 2
+since, no matter what the branch prediction strategy is, we will
+mispredict with a probability of 50%.
+   </p>
+   <p>
+    Putting all of this together, we get the following result
+   </p>
+   <p>
+    <img src="/blog/images/mispredict-results.png" title="Mispredict probability against Branch Probability" alt="Mispredict probability against Branch Probability">
+   </p>
+   <p>
+    Using my approximation from earlier, we find that a \(13\)-bit
+counter best models the performance of my CPU on this workload which
+motivates a cool measure of branch predictor performance on a workload
+in terms of \(n\)-bit counters.
+   </p>
+   <p>
+    <img src="/blog/images/mispredict-final.png" title="Mispredict probability against Branch Probability" alt="Mispredict probability against Branch Probability">
+   </p>
+   <p>
+    This was pretty fun
+   </p>
+  </main>
+ </body>
+</html>
