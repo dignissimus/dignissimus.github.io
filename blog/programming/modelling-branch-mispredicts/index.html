@@ -188,10 +188,11 @@ p^3\right) + p\left(\left(1 - p\right)^3 + 3\left(1 - p\right)^2p
    </p>
    <p>
     I’m not sure if there’s a nice closed-form for this but we can use
-the central limit theorem to approximate the number of times we branch.
-If \(X\) is a random variable representing the number of times we branch
-after \(n\) iterations then we mispredict with probability that is
-around \[ \begin{align*} pP\left(X &lt; \frac{n}{2}\right) + \left(1 -
+the <a href="https://en.wikipedia.org/wiki/Central_limit_theorem">Central Limit
+Theorem</a> to approximate the number of times we branch. If \(X\) is a
+random variable representing the number of times we branch after \(n\)
+iterations then we mispredict with probability that is around \[
+\begin{align*} pP\left(X &lt; \frac{n}{2}\right) + \left(1 -
 p\right)P\left(X &gt; \frac{n}{2}\right) &amp;= pP\left(X &lt;
 \frac{n}{2}\right) + \left(1 - p\right)\left(1 - P\left(X &lt;
 \frac{n}{2}\right)\right) \\ &amp;= pP\left(X &lt; \frac{n}{2}\right) +
