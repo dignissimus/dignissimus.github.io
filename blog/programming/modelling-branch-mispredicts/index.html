@@ -56,9 +56,80 @@
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
    </div>
    <p>
-    In the ideal case, we always predict the most likely outcome so if
-our branch probability is \(p\) we mispredict with probabiility \(\min
-\{p, 1 - p\} \) which looks like this on a graph.
+    When we compile this code we get the following disassembly output
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1149</span><span class="op">:</span>   <span class="dv">55</span>                      push   <span class="op">%</span>rbp</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">114</span><span class="er">a</span><span class="op">:</span>   <span class="dv">48</span> <span class="dv">89</span> e5                mov    <span class="op">%</span>rsp<span class="op">,%</span>rbp</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">114</span><span class="er">d</span><span class="op">:</span>   <span class="dv">48</span> <span class="dv">83</span> ec <span class="dv">10</span>             sub    $<span class="bn">0x10</span><span class="op">,%</span>rsp</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    srand<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1151</span><span class="op">:</span>   bf <span class="bn">00</span> <span class="bn">00</span> <span class="bn">00</span> <span class="bn">00</span>          mov    $<span class="bn">0x0</span><span class="op">,%</span>edi</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1156</span><span class="op">:</span>   e8 d5 fe ff ff          call   <span class="dv">1030</span> <span class="op">&lt;</span>srand@plt<span class="op">&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">volatile</span> <span class="dt">int</span> total <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="dv">115</span><span class="er">b</span><span class="op">:</span>   c7 <span class="dv">45</span> f8 <span class="bn">00</span> <span class="bn">00</span> <span class="bn">00</span> <span class="bn">00</span>    movl   $<span class="bn">0x0</span><span class="op">,-</span><span class="bn">0x8</span><span class="op">(%</span>rbp<span class="op">)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">27</span><span class="op">);</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span> </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1162</span><span class="op">:</span>   c7 <span class="dv">45</span> fc <span class="bn">00</span> <span class="bn">00</span> <span class="bn">00</span> <span class="bn">00</span>    movl   $<span class="bn">0x0</span><span class="op">,-</span><span class="bn">0x4</span><span class="op">(%</span>rbp<span class="op">)</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1169</span><span class="op">:</span>   eb <span class="dv">19</span>                   jmp    <span class="dv">1184</span> <span class="op">&lt;</span>main<span class="op">+</span><span class="bn">0x3b</span><span class="op">&gt;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>rand<span class="op">()</span> <span class="op">&lt;</span> RAND_MAX <span class="op">/</span> <span class="dv">100</span> <span class="op">*</span> PROBABILITY<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="dv">116</span><span class="er">b</span><span class="op">:</span>   e8 d0 fe ff ff          call   <span class="dv">1040</span> <span class="op">&lt;</span>rand@plt<span class="op">&gt;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1170</span><span class="op">:</span>   <span class="dv">3</span><span class="er">d</span> e7 ff ff <span class="dv">3</span><span class="er">f</span>          cmp    $<span class="bn">0x3fffffe7</span><span class="op">,%</span>eax</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1175</span><span class="op">:</span>   <span class="dv">7</span><span class="er">f</span> <span class="dv">0</span><span class="er">9</span>                   jg     <span class="dv">1180</span> <span class="op">&lt;</span>main<span class="op">+</span><span class="bn">0x37</span><span class="op">&gt;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>             <span class="op">++</span>total<span class="op">;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1177</span><span class="op">:</span>   <span class="dv">8</span><span class="er">b</span> <span class="dv">45</span> f8                mov    <span class="op">-</span><span class="bn">0x8</span><span class="op">(%</span>rbp<span class="op">),%</span>eax</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="dv">117</span><span class="er">a</span><span class="op">:</span>   <span class="dv">83</span> c0 <span class="bn">01</span>                add    $<span class="bn">0x1</span><span class="op">,%</span>eax</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="dv">117</span><span class="er">d</span><span class="op">:</span>   <span class="dv">89</span> <span class="dv">45</span> f8                mov    <span class="op">%</span>eax<span class="op">,-</span><span class="bn">0x8</span><span class="op">(%</span>rbp<span class="op">)</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">27</span><span class="op">);</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span> </span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1180</span><span class="op">:</span>   <span class="dv">83</span> <span class="dv">45</span> fc <span class="bn">01</span>             addl   $<span class="bn">0x1</span><span class="op">,-</span><span class="bn">0x4</span><span class="op">(%</span>rbp<span class="op">)</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1184</span><span class="op">:</span>   <span class="dv">81</span> <span class="dv">7</span><span class="er">d</span> fc ff ff ff <span class="bn">07</span>    cmpl   $<span class="bn">0x7ffffff</span><span class="op">,-</span><span class="bn">0x4</span><span class="op">(%</span>rbp<span class="op">)</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="dv">118</span><span class="er">b</span><span class="op">:</span>   <span class="dv">7</span><span class="er">e</span> de                   jle    <span class="dv">116</span><span class="er">b</span> <span class="op">&lt;</span>main<span class="op">+</span><span class="bn">0x22</span><span class="op">&gt;</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="dv">118</span><span class="er">d</span><span class="op">:</span>   b8 <span class="bn">00</span> <span class="bn">00</span> <span class="bn">00</span> <span class="bn">00</span>          mov    $<span class="bn">0x0</span><span class="op">,%</span>eax</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1192</span><span class="op">:</span>   c9                      leave</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1193</span><span class="op">:</span>   c3                      ret</span></code></pre>
+   </div>
+   <p>
+    The compiler has transformed our if statement into the conditional
+jump instruction <code>jg</code> which instructs the processor to skip
+past the increment line if the condition is false. Modern processors
+split instruction processing into different stages which are performed
+by different processor units, this is called pipelining and we do this
+so we can work on processing many different instructions at once to
+improve performance. For example, the classic RISC pipeline includes
+stages for fetching instructions, decoding instructions, executing
+instructions, accessing memory and writing to registers.
+   </p>
+   <p>
+    In general pipelining works works well but things become tricky with
+conditional jumps or “branches”. When we have a branch we introduce a
+dependency on condition we’re branching on. This prevents us from
+knowing what instruction we need to put into the pipeline until the
+instruction that computes the condition has been evaluated.
+   </p>
+   <p>
+    Modern CPUs prediction employ “branch prediction” where we try and
+guess what will come next, if we’re correct then we effectively get to
+fetch the next instruction for free but if we’re wrong then we need to
+bin the result and start the entire process for the correct instruction,
+reverting all future work we’ve done based on our incorrect guess.
+   </p>
+   <p>
+    The <a href="https://www.nxp.com/docs/en/reference-manual/MC68040UM.pdf">Motorola
+M68040 processor</a> used the simple heuristic that we usually take
+branches and its strategy was to predict that every branch was taken but
+modern CPUs use more complicated heuristics such as global and local
+pattern correlation which typically work by recording branching patterns
+in specialised hardware called the Pattern History Table.
+   </p>
+   <p>
+    Our workload is entirely random so there aren’t any exploitable
+patterns we can use to predict whether or not we will take a branch. In
+the ideal case, we always predict the most likely outcome so if our
+branch probability is \(p\) we mispredict with probabiility \(\min \{p,
+1 - p\} \) which looks like this on a graph.
    </p>
    <p>
     <img src="/blog/images/best-case.png" title="In the ideal case, we always predict the most likely branch" alt="In the ideal case, we always predict the most likely branch">
