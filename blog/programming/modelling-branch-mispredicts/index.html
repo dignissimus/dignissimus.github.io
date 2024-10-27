@@ -158,9 +158,10 @@ case which is \(2p(1 - p)\)
    </p>
    <p>
     If we have a 3-bit predictor which stores the branch result from the
-previous branch instructions then the probability of a mispredict is the
-probability that the most common path taken out of the previous 3 runs
-is not the one we take now. This is the probability that we either
+previous 3 branch instructions then the probability of a mispredict is
+the probability that the most common path taken out of the previous 3
+runs is not the one we take now. This is the probability that we
+either
    </p>
    <ul>
     <li>
@@ -217,7 +218,7 @@ running the code with <code>PROBABILITY</code> set to either 0 or 1 and
 we can estimate the total number of branches from our if statement using
 our approximation for the mispredict probability above by running the
 code with <code>PROBABILITY</code> set to 50% and multiplying the number
-of mispredicts caused by our branch by \(2\) since, no matter what the
+of mispredicts caused by our branch by 2 since, no matter what the
 branch prediction strategy is, we will mispredict with a probability of
 50%.
    </p>
