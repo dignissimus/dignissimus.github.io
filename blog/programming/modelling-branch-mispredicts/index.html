@@ -147,19 +147,20 @@ features as part of the branch prediction system for the Intel
 Pentium.
    </p>
    <p>
-    If we have a 1-bit predictor, the probability of a mispredict is the
-probability we branch now but we didn’t branch in the previous case or
-we don’t branch now but we branched in the previous case which is \(2p(1
-- p)\)
+    If we have a 1-bit predictor where we use just 1 bit to store whether
+or not the previous branch was taken then the probability of a
+mispredict is the probability we branch now but we didn’t branch in the
+previous case or we don’t branch now but we branched in the previous
+case which is \(2p(1 - p)\)
    </p>
    <p>
     <img src="/blog/images/1-bit.png" title="Mispredict probability for a 1-bit saturating counter" alt="Mispredict probability for a 1-bit saturating counter">
    </p>
    <p>
-    If we have a 3-bit predictor then the probability of a mispredict is
-the probability that the most common path taken out of the previous 3
-runs is not the one we take now. This is the probability that we
-either
+    If we have a 3-bit predictor which stores the branch result from the
+previous branch instructions then the probability of a mispredict is the
+probability that the most common path taken out of the previous 3 runs
+is not the one we take now. This is the probability that we either
    </p>
    <ul>
     <li>
