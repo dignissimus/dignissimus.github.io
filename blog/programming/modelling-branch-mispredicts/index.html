@@ -94,18 +94,21 @@
    <p>
     The compiler has transformed our if statement into the conditional
 jump instruction <code>jg</code> which instructs the processor to skip
-past the increment line if the condition is false. Modern processors
-split instruction processing into different stages which are performed
-by different processor units, this is called pipelining and we do this
-so we can work on processing many different instructions at once to
-improve performance. For example, the classic RISC pipeline includes
-stages for fetching instructions, decoding instructions, executing
-instructions, accessing memory and writing to registers.
+past the increment line if the condition is false.
    </p>
    <p>
-    In general pipelining works works well but things become tricky with
+    Modern processors split instruction processing into different stages
+which are performed by different processor units, this is called
+pipelining and we do this so we can work on processing many different
+instructions at once to improve performance. For example, the classic
+RISC pipeline includes stages for fetching instructions, decoding
+instructions, executing instructions, accessing memory and writing to
+registers.
+   </p>
+   <p>
+    Pipelining generally works works well but things become tricky with
 conditional jumps or “branches”. When we have a branch we introduce a
-dependency on condition we’re branching on. This prevents us from
+dependency on condition we’re branching on and this prevents us from
 knowing what instruction we need to put into the pipeline until the
 instruction that computes the condition has been evaluated.
    </p>
