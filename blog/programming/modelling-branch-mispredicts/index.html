@@ -139,8 +139,12 @@ branch probability is \(p\) we mispredict with probabiility \(\min \{p,
    </p>
    <p>
     The simplest way we can approximate this is by maintaining a history
-of branch results and observing the most common result. This is also
-known as a saturating counter which was used in the Intel Pentium.
+of branch results and observing the most common result. If we usually
+take branches then we should predict that we take the next branch and if
+we usually don’t then we should predict that we don’t take the next
+branch. This is also known as a saturating counter and this idea
+features as part of the branch prediction system for the Intel
+Pentium.
    </p>
    <p>
     If we have a 1-bit predictor, the probability of a mispredict is the
@@ -226,8 +230,8 @@ doesn’t eliminate the branch and measuring mispredicts using
    <p>
     Using my approximation from earlier, we find that a \(14\)-bit
 counter best models the performance of my CPU on this particular
-workload which motivates a cool measure of branch predictor performance
-on a workload in terms of \(n\)-bit counters.
+workload which might motivate a cool measure of branch predictor
+performance on a workload in terms of \(n\)-bit counters.
    </p>
    <p>
     <img src="/blog/images/mispredict-final.png" title="Mispredict probability against Branch Probability" alt="Mispredict probability against Branch Probability">
