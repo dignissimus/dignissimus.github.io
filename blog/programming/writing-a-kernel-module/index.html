@@ -198,32 +198,36 @@ to the file. My kernel module looks like this:
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span> total <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
 <span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> it <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> it <span class="op">&lt;</span> <span class="dv">128</span><span class="op">;</span> it<span class="op">++)</span> <span class="op">{</span></span>
 <span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> file <span class="op">*</span> filp <span class="op">=</span> filp_open<span class="op">(</span><span class="st">"/home/sam/writespeed"</span><span class="op">,</span> O_CREAT <span class="op">|</span> O_WRONLY<span class="op">,</span> <span class="bn">0777</span><span class="op">);</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span> <span class="op">*</span>buffer <span class="op">=</span> kzalloc<span class="op">(</span><span class="dv">1024</span><span class="op">,</span> GFP_KERNEL <span class="op">|</span> __GFP_HIGH <span class="op">|</span> GFP_ATOMIC<span class="op">);</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        u64 start <span class="op">=</span> ktime_get_ns<span class="op">();</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        loff_t pos <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">100</span> <span class="op">*</span> <span class="dv">1024</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>            kernel_write<span class="op">(</span>filp<span class="op">,</span> buffer<span class="op">,</span> <span class="dv">1024</span><span class="op">,</span> <span class="op">&amp;</span>pos<span class="op">);</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        u64 end <span class="op">=</span> ktime_get_ns<span class="op">();</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> diff <span class="op">=</span> <span class="op">(</span>end <span class="op">-</span> start<span class="op">);</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        total <span class="op">+=</span> diff<span class="op">;</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        kfree<span class="op">(</span>buffer<span class="op">);</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        filp_close<span class="op">(</span>filp<span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>string <span class="op">=</span> <span class="op">(</span><span class="dt">char</span> <span class="op">*)</span> kzalloc<span class="op">(</span><span class="dv">128</span><span class="op">,</span> GFP_KERNEL <span class="op">|</span> __GFP_HIGH <span class="op">|</span> GFP_ATOMIC<span class="op">);</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    sprintf<span class="op">(</span>string<span class="op">,</span> KERN_INFO <span class="st">"microseconds: </span><span class="sc">%lld</span><span class="st">"</span><span class="op">,</span> <span class="op">(</span>total <span class="op">/</span> <span class="dv">1000</span><span class="op">)</span> <span class="op">/</span> <span class="dv">128</span><span class="op">);</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    printk<span class="op">(</span>string<span class="op">);</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    kfree<span class="op">(</span>string<span class="op">);</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">void</span> __exit custom_exit<span class="op">(</span><span class="dt">void</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    printk<span class="op">(</span>KERN_INFO <span class="st">"Exiting write module"</span><span class="op">);</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span> <span class="op">*</span>buffer <span class="op">=</span> kzalloc<span class="op">(</span><span class="dv">1024</span><span class="op">,</span> GFP_ATOMIC<span class="op">);</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(!</span>buffer<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>            printk<span class="op">(</span>KERN_ERR <span class="st">"Failed to allocate memory"</span><span class="op">);</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        u64 start <span class="op">=</span> ktime_get_ns<span class="op">();</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        loff_t pos <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">100</span> <span class="op">*</span> <span class="dv">1024</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>            kernel_write<span class="op">(</span>filp<span class="op">,</span> buffer<span class="op">,</span> <span class="dv">1024</span><span class="op">,</span> <span class="op">&amp;</span>pos<span class="op">);</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        u64 end <span class="op">=</span> ktime_get_ns<span class="op">();</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> diff <span class="op">=</span> <span class="op">(</span>end <span class="op">-</span> start<span class="op">);</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>        total <span class="op">+=</span> diff<span class="op">;</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>        kfree<span class="op">(</span>buffer<span class="op">);</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>        filp_close<span class="op">(</span>filp<span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>string <span class="op">=</span> <span class="op">(</span><span class="dt">char</span> <span class="op">*)</span> kzalloc<span class="op">(</span><span class="dv">128</span><span class="op">,</span> GFP_KERNEL<span class="op">);</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    snprintf<span class="op">(</span>string<span class="op">,</span> <span class="dv">128</span><span class="op">,</span> KERN_INFO <span class="st">"microseconds: </span><span class="sc">%lld</span><span class="st">"</span><span class="op">,</span> <span class="op">(</span>total <span class="op">/</span> <span class="dv">1000</span><span class="op">)</span> <span class="op">/</span> <span class="dv">128</span><span class="op">);</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    printk<span class="op">(</span>string<span class="op">);</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    kfree<span class="op">(</span>string<span class="op">);</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
 <span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>module_init<span class="op">(</span>custom_init<span class="op">);</span></span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>module_exit<span class="op">(</span>custom_exit<span class="op">);</span></span></code></pre>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">void</span> __exit custom_exit<span class="op">(</span><span class="dt">void</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    printk<span class="op">(</span>KERN_INFO <span class="st">"Exiting write module"</span><span class="op">);</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>module_init<span class="op">(</span>custom_init<span class="op">);</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>module_exit<span class="op">(</span>custom_exit<span class="op">);</span></span></code></pre>
    </div>
    <p>
     Something that I found interesting about writing kernel code was that
@@ -233,11 +237,11 @@ had to use <code>ktime_get_ns</code> to get the time in order to
 benchmark performance and <code>kzalloc</code> to allocate memory.
    </p>
    <p>
-    After running both of the benchmarks I found that I got about a 1.2x
-speedup from writing my code in kernel space.
-   </p>
-   <p>
-    Cool!
+    After running both of the benchmarks I found that I got about a small
+speedup from writing my code as a kernel module however my analysis of
+the performance improvement is lacking as there are so many factors that
+could have contributed to the difference in execution time but learning
+how to write a kernel module was pretty cool.
    </p>
   </main>
  </body>
