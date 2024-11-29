@@ -428,7 +428,7 @@ break even when this is equal to 0 which occurs when \(K = \mathbb E
 stock at time \(T\).
    </p>
    <p>
-    If we assume that the log-return from holding this stock, \(X \sim
+    If we assume that the log-return from holding this stock, \(X ~
 N(\mu, \sigma^2)\), is normally distributed with mean \(\mu\) and
 standard deviation \(\sigma\) then we get the following equation
 describing the stock price.
@@ -504,10 +504,11 @@ describe the motion of the stock price as an Itô process. After doing
 this, we get
    </p>
    <p>
-    \[ \begin{align*} dS_t &amp;= \left( \mu e^{r_t} + \frac{\sigma^2}{2}
-e^{r_t} \right) dt + \sigma e^{r_t}dW_t \\ dS_t &amp;= \mu S_t
-\frac{\sigma^2}{2}S_t + S_tdW_t \\ dS_t &amp;= S_t \left( \mu +
-\frac{\sigma^2}{2} \right)dt + S_TdW_t \end{align*} \]
+    \[ \begin{align*} dS_t &amp;= (\mu e^{r_t}
++\frac{\sigma^2}{2}e^{r_t})dt + \sigma e^{r_t}dW_t \\\ dS_t &amp;= \mu
+S_t \frac{\sigma^2}{2}S_t + S_tdW_t \\<br>
+dS_t &amp;= S_t(\mu + \frac{\sigma^2}{2})dt + S_TdW_t \end{align*}
+\]
    </p>
    <p>
     This describes <a href="https://en.wikipedia.org/wiki/Geometric_Brownian_motion">Geometric
@@ -556,10 +557,10 @@ second image I increase the expected jump size to better illustrate the
 jump diffusion model.
    </p>
    <p>
-    <img src="/blog/images/more-simulated-asset-prices-jump-model.png" alt="Simulated Jump Diffusion Stock Prices">
+    <img src="images/more-simulated-asset-prices-jump-model.png" alt="Simulated Jump Diffusion Stock Prices">
    </p>
    <p>
-    <img src="/blog/images/simulated-asset-prices-jump-model.png" alt="Simulated Jump Diffusion Stock Prices">
+    <img src="images/simulated-asset-prices-jump-model.png" alt="Simulated Jump Diffusion Stock Prices">
    </p>
    <p>
     My code looks like this
