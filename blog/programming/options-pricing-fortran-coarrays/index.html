@@ -400,7 +400,7 @@ However, it was <a href="https://en.wikipedia.org/wiki/Libor_scandal">discontinu
 fraud</a> as respondents lied abot the rates they would offer.
    </p>
    <h2>
-    Interest rates, Forwards and the Time Value of Money
+    Interest rates, Futures and the Time Value of Money
    </h2>
    <p>
     Lets say that we have an interest rate \(r\) that is continually
@@ -414,17 +414,17 @@ today. We’re going to use this fact while pricing options.
 expected value of the option at the time of maturity. For example, I
 could construct such an option contract by waiting for a year then
 purchasing the stock at the time at maturity for the agreed upon price,
-this price is called the “strike price”.
+this price is called the forward price.
    </p>
    <p>
-    Let the strike price be \(K\), the time of maturity be \(T\) and the
+    Let the forward price be \(F\), the time of maturity be \(T\) and the
 stock price at the time of maturity be \(S_T\). If I use this
-construction, I will make a profit of \(K - S_T\) at the time of
+construction, I will make a profit of \(F - S_T\) at the time of
 maturity. Adjusting for the time difference and the time value of money,
 this becomes \(e^{-rT}(K - S_T)\) so this suggest that the value of this
 contract is thus \(\mathbb E \left[ e^{-rT}(K - S_T) \right] \) and we
 break even when this is equal to 0 which occurs when \(K = \mathbb E
-\left[S_T\right]\) and the strike price is the expected price of the
+\left[S_T\right]\) and the forward price is the expected price of the
 stock at time \(T\).
    </p>
    <p>
@@ -456,18 +456,18 @@ construction upper-bounds the fair price of this option.
    </h2>
    <p>
     In Finance, a European-style option is a contract that grants the
-purchaser the right to buy a stock at a specific price on a certain
-date. So it is like a Forward contract in that we may buy the stock at
-the agreed price at the time of maturity but it differs in that we have
-the <em>option</em> to not do this.
+purchaser the right to buy a stock at a specific price, the “strike
+price” on a certain date. So it is like a Forward contract in that we
+may buy the stock at the agreed price at the time of maturity but it
+differs in that we have the <em>option</em> to not do this.
    </p>
    <p>
-    If the value of the stock is higher than the contract’s strike price
-then we can buy the stock at the strike price and sell the stock at the
-market price, yielding us a profit of \(K - S_T\). If the strike price
-is higher than the stock price then the contract is worthless and our
-profit is 0 since it’s cheaper to buy the stock at the market price and
-it doesn’t make sense to exercise our option.
+    If the value of the stock is higher than the contract’s strike price,
+\(K\), then we can buy the stock at the strike price and sell the stock
+at the market price, yielding us a profit of \(K - S_T\). If the strike
+price is higher than the stock price then the contract is worthless and
+our profit is 0 since it’s cheaper to buy the stock at the market price
+and it doesn’t make sense to exercise our option.
    </p>
    <p>
     Using this strategy, the value of our contract at time \(T\) is
