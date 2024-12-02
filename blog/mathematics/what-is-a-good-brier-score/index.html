@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    What is a good Brier score? - Looking at implied probabilities from
+Manifold Markets
+   </h1>
+   <p>
+    Let’s say I ask you “will it rain tomorrow?” and you respond “it will
+probably rain tomorrow”, what does “probably” mean?
+   </p>
+   <p>
+    One interpretation of this is that when we consider all possible
+future worlds, it rains more often than it doesn’t but this might not
+make all that much sense as we’re only able to experience one of these
+worlds.
+   </p>
+   <p>
+    Another way that we can think about this in terms of games or bets.
+Imagine that I’m going to flip a coin ten times, and I will pay you one
+unit of my preferred currency, the <a href="https://www.google.com/finance/quote/GBP-USD?hl=en&amp;window=5D">Pound
+sterling</a>, every time it turns up heads. How much would you pay to
+play this game? The expected vaue from playing this game is £5 since you
+would expect the coin to turn up heads roughly half the time.
+   </p>
+   <p>
+    We can transform the question of whether it will rain tomorrow into a
+game like this. I’ll pay you £1 if it rains tomorrow and otherwise I
+will pay you nothing. How much would you pay to play this game? The fact
+that you think that it’s more likely to rain than not implies that you’d
+expect your payout to be closer to £1 than it is to £0. In other words,
+you’d value this game more than 50p.
+   </p>
+   <p>
+    Now that we have this game, we can evaluate how good your predictions
+are by evaluating how much money you’re making or losing in the long
+run. If you’re losing money then you’re consistently overstating the
+chances of an event occurring. If, on the other hand, you’re making
+large sums of money in the long run then you’re understating the chances
+of an event occuring.
+   </p>
+   <p>
+    <a href="https://manifold.markets/">Manifold Markets</a> is a website
+that hosts several user-created games like this called “markets” using
+play-money called Mana. Users can pose questions such as <a href="https://manifold.markets/mr_mino/will-ding-liren-win-the-2024-world">Will
+Ding Liren win the 2024 World Chess Championship?</a> and put Mana on
+the outcome of events.
+   </p>
+   <p>
+    Another way you could evaluate predictions is by assigning a score to
+each pair of prediction and outcomes. So predicting a 20% probability
+for an event that happens would give you a worse score than predicting
+80% for that event.
+   </p>
+   <p>
+    The <a href="https://en.wikipedia.org/wiki/Brier_score">Brier
+score</a> for a series of predictions is defined as the mean squared
+difference between the outcome of an event and the forecast probability
+for the event. Where your forecast \(f_i\) is the probability you assign
+to the event occurring and the outcome, \(o_i\) is 0 if the event did
+not occurr and 1 if it did. As an equation that looks like this.
+   </p>
+   <p>
+    \[\text{Brier Score} = \frac{1}{N} \sum_{i=1}^N(o_i - f_i)^2\]
+   </p>
+   <p>
+    If I was completely uniformed about every event then intuitively I
+would forecast 50% for every single event as I’m indifferent between
+both options. And we can prove that for any symmetric distribution this
+is the constant function that minimises the Brier score.
+   </p>
+   <p>
+    If we model events whose as having an underlying true probability,
+\(p\), that follows some distribution and an outcome that is 1 with
+probability \(p\) and is 0 with probability \(1 - p\) then the expected
+brier score for forcasting \(c\) for everything is
+   </p>
+   <p>
+    \[ \int_0^1 f(p)\left((1 - p)c^2 + p(1 - c)^2\right) dp \]
+   </p>
+   <p>
+    If this distribution is symmetric around 0.5 then we have
+   </p>
+   <p>
+    \[ \begin{align*} \mathbb E \left[\text{Brier Score}\right] &amp;=
+\int_0^1 f(p)\left((1 - p)c^2 + p(1 - c)^2\right) dp \\ &amp;=
+\int_0^{\frac{1}{2}} f(p)\left((1 - p)c^2 + p(1 - c)^2\right) + f(1 -
+p)\left(pc^2 + (1 - p)(1-c)^2 \right)dp \\ &amp;= \int_0^{\frac{1}{2}}
+f(p)\left((1 - p)c^2 + p(1 - c)^2\right) + f(p)\left(pc^2 + (1 -
+p)(1-c)^2 \right)dp \\ &amp;= \int_0^{\frac{1}{2}} f(p)\left((1 - p)(c^2
++ (1 - c)^2) + p((1 - c)^2 + c^2)\right)dp \\ &amp;=
+\int_0^{\frac{1}{2}} f(p)\left(c^2 + (1 - c)^2\right)dp \\ &amp;=
+\frac{c^2 + (1 - c)^2}{2} \end{align*} \]
+   </p>
+   <p>
+    This has a minimum of 0.25 at \(c = 0.5\) so if your Brier score is
+above 0.25 you are doing worse than predicting every event with 50%
+probability.
+   </p>
+   <p>
+    We might expect the distribution of “true probabilities” to be
+uniform or perhaps even follow a <a href="https://en.wikipedia.org/wiki/Logit-normal_distribution">logit-normal
+distribution</a>. If we make the assumption that we the market price is
+the true probability then we can investigate this further by looking at
+data from markets on Manifold.
+   </p>
+   <p>
+    I took implied market probability data from markets on Manifold.
+Since I know I’m going to be taking log-odds I dropped rows where the
+implied probability was larger than 99% or below 1% and saw the
+following distribution which doesn’t look very normal. I also dropped
+all rows with fewer than unique bettors. The histogram for the data
+looks like this
+   </p>
+   <p>
+    <img src="/blog/images/manifold-probabilities-histogram.png">
+   </p>
+   <p>
+    Taking logits we get the following distribution
+   </p>
+   <p>
+    <img src="/blog/images/manifold-probabilities-logit-histogram.png">
+   </p>
+   <p>
+    The QQ-plot looks roughly normal however the tails are a bit heavier
+than you would expect from a logit-normal distirbution.
+   </p>
+   <p>
+    <img src="/blog/images/manifold-probabilities-logit-qq-plot.png">
+   </p>
+   <p>
+    Despite the heavy tails, the distribution is pretty symmetric so as
+discovered earlier, you should aim for a Brier score of below 0.25 or
+else you’re <a href="https://en.wikipedia.org/wiki/Calibrated_probability_assessment">uncalibrated</a>.
+   </p>
+  </main>
+ </body>
+</html>
