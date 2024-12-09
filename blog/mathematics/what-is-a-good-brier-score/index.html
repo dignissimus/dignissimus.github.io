@@ -132,7 +132,7 @@ from markets on Manifold.
     I took implied market probability data from markets on Manifold.
 Since I know I’m going to be taking log-odds I dropped rows where the
 implied probability was larger than 99% or below 1% and saw the
-following distribution which doesn’t look very normal. I also dropped
+following distribution which doesn’t look very uniform. I also dropped
 all rows with fewer than 50 unique bettors. The histogram for the data
 looks like this
    </p>
@@ -146,16 +146,72 @@ looks like this
     <img src="/blog/images/manifold-probabilities-logit-histogram.png">
    </p>
    <p>
-    The QQ-plot looks roughly normal however the tails are a bit heavier
-than you would expect from a logit-normal distirbution.
+    To fit the logit-normal model I used the <a href="https://en.wikipedia.org/wiki/Maximum_likelihood_estimation">maximum
+likelihood estimators</a> for \(\mu\) and \(\sigma\).
+   </p>
+   <p>
+    The pdf for the logit-normal distribution is \(f(x) = \frac{1}{\sigma
+\sqrt{2\pi}x(1-x)} e^{\frac{\left(\operatorname{logit}(x) -
+\mu\right)^2}{2\sigma^2}}\). Assuming our observations, \(X\), are
+independent our likelihood function looks like
+   </p>
+   <p>
+    \[ \mathcal{L}(\theta | X) = \prod_i^N
+\frac{e^{\frac{\left(\operatorname{logit}(x) -
+\mu\right)^2}{2\sigma^2}}}{\sigma \sqrt{2\pi}x(1-x)} \]
+   </p>
+   <p>
+    Taking logs we get
+   </p>
+   <p>
+    \[ \log \mathcal{L}(\theta | X) = \sum_{i=1}^N \log
+\frac{e^{\frac{\left(\operatorname{logit}(x) -
+\mu\right)^2}{2\sigma^2}}}{\sigma \sqrt{2\pi}x(1-x)} \]
+   </p>
+   <p>
+    Differentiating this with respect to \(\mu\) to find the maximum we
+get
+   </p>
+   <p>
+    \[ \begin{align*} \frac{\partial \log \mathcal{L}}{\partial \mu}
+&amp;= \frac{\partial}{\partial \mu} \sum_{i=1}^N \log
+\frac{e^{\frac{\left(\operatorname{logit}(x) -
+\mu\right)^2}{2\sigma^2}}}{\sigma \sqrt{2\pi}x(1-x)} \\ &amp;=
+\frac{\partial}{\partial \mu} \sum_{i=1}^N \log
+e^{\frac{\left(\operatorname{logit}(x) - \mu\right)^2}{2\sigma^2}} -
+\log \sigma \sqrt{2\pi}x(1-x) \\ &amp;= \frac{\partial}{\partial \mu}
+\sum_{i=1}^N \log e^{\frac{\left(\operatorname{logit}(x) -
+\mu\right)^2}{2\sigma^2}} \\ &amp;= \frac{\partial}{\partial \mu}
+\sum_{i=1}^N \frac{\left(\operatorname{logit}(x) -
+\mu\right)^2}{2\sigma^2} \\ &amp;= \frac{1}{2\sigma^2}
+\frac{\partial}{\partial \mu} \sum_{i=1}^N \left(\operatorname{logit}(x)
+- \mu\right)^2 \\ &amp;= \frac{1}{2\sigma^2} \sum_{i=1}^N
+-2\left(\operatorname{logit}(x) - \mu\right) \\ &amp;=
+-\frac{1}{\sigma^2} \sum_{i=1}^N \operatorname{logit}(x) - \mu \\ &amp;=
+-\frac{1}{\sigma^2} \sum_{i=1}^N \operatorname{logit}(x) - \mu \\ &amp;=
+\frac{1}{\sigma^2} \left(\mu N - \sum_{i=1}^N \operatorname{logit}(x)
+\right)\\ &amp;= \frac{N}{\sigma^2} \left(\mu - \frac{1}{N}\sum_{i=1}^N
+\operatorname{logit}(x) \right)\\ \end{align*} \]
+   </p>
+   <p>
+    Which has a value of 0 precisely when \(\mu\) is the sample mean of
+the logits of our observation. I used the same procedure to find the MLE
+for \(\sigma\).
+   </p>
+   <p>
+    The QQ-plot looks roughly normal however the distribution is biased
+towards 0.
    </p>
    <p>
     <img src="/blog/images/manifold-probabilities-logit-qq-plot.png">
    </p>
    <p>
-    Despite the heavy tails, the distribution is pretty symmetric so as
-discovered earlier, you should aim for a Brier score of below 0.25 or
-else you’re <a href="https://en.wikipedia.org/wiki/Calibrated_probability_assessment">uncalibrated</a>.
+    Despite this, the distribution is pretty symmetric so as discovered
+earlier, you should aim for a Brier score of below 0.25 (0.5 if you
+multiply by 2 like <a href="https://fatebook.io/">Fatebook</a>) or else
+you’re <a href="https://en.wikipedia.org/wiki/Calibrated_probability_assessment">uncalibrated</a>.
+The true mean is actually \(0.47\) so you scould achieve a slightly
+better brier score by always guessing slightly below 50%.
    </p>
   </main>
  </body>
