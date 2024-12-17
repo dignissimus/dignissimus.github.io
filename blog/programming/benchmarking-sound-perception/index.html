@@ -347,20 +347,10 @@ one model explains the data than another.
 like this
    </p>
    <div class="sourceCode" id="cb2">
-    <pre class="sourceCode R"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>likelihood_linear <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (error <span class="cf">in</span> (df<span class="sc">$</span>heard <span class="sc">-</span> df<span class="sc">$</span>tone)) {</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>     likelihood_linear <span class="ot">&lt;-</span> likelihood_linear <span class="sc">*</span> <span class="fu">dnorm</span>(error, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> sigma_linear) </span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>likelihood_log <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (error <span class="cf">in</span> (<span class="fu">log</span>(df<span class="sc">$</span>heard) <span class="sc">-</span> <span class="fu">log</span>(df<span class="sc">$</span>tone))) {</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>     likelihood_log <span class="ot">&lt;-</span> likelihood_log <span class="sc">*</span> <span class="fu">dnorm</span>(error, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> sigma_log) </span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>likelihood_linear</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>likelihood_log</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>likelihood_log <span class="sc">/</span> likelihood_linear</span></code></pre>
+    <pre class="sourceCode R"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>likelihood_linear <span class="ot">&lt;-</span> <span class="fu">prod</span>(<span class="fu">dnorm</span>(df<span class="sc">$</span>heard <span class="sc">-</span> df<span class="sc">$</span>tone, <span class="at">mean=</span><span class="dv">0</span>, <span class="at">sd=</span>sigma_linear))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>likelihood_log <span class="ot">&lt;-</span> <span class="fu">prod</span>(<span class="fu">dnorm</span>(<span class="fu">log</span>(df<span class="sc">$</span>heard) <span class="sc">-</span> <span class="fu">log</span>(df<span class="sc">$</span>tone), <span class="at">mean=</span><span class="dv">0</span>, <span class="at">sd=</span>sigma_log))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>likelihood_log <span class="sc">/</span> likelihood_linear</span></code></pre>
    </div>
    <p>
     The likelihood for the the first model is about \(10^{-26}\) whereas
