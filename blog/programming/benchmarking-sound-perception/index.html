@@ -341,7 +341,8 @@ posterior distribution
     <img src="/blog/images/posterior-sigma-log.png">
    </p>
    <p>
-    After taking the MLE for each of these models I can find the <a href="https://en.wikipedia.org/wiki/Bayes_factor">Bayes factor</a> for
+    After taking the MLE for each of these models I can find a point
+estimate for the <a href="https://en.wikipedia.org/wiki/Bayes_factor">Bayes factor</a> for
 the two models. The Bayes factor allows me to quantify how much better
 one model explains the data than another.
    </p>
@@ -357,8 +358,10 @@ like this
    </div>
    <p>
     The likelihood for the the first model is about \(10^{-68}\) whereas
-the likelihood for the second model comes out to be around \(10^{59}\).
-This gives us a Bayes factor of about \(10^{125}\) which is a <a href="https://en.wikipedia.org/wiki/Bayes_factor#Interpretation">decisive</a>
+the likelihood for the second model comes out to be around \(10^{59}\)
+and numerically integrating to approximate the true Bayes factor gives
+me about the same result. This gives us a Bayes factor of about
+\(10^{125}\) which is a <a href="https://en.wikipedia.org/wiki/Bayes_factor#Interpretation">decisive</a>
 victory for the log-linear model.
    </p>
    <p>
