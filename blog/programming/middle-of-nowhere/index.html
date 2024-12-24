@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Quantifying the middle of nowhere
+   </h1>
+   <p>
+    <strong>24 December 2024</strong>
+   </p>
+   <p>
+    <em>Learning about geospatial data</em>
+   </p>
+   <hr>
+   <p>
+    I talk about <a href="https://en.wikipedia.org/wiki/Tamworth,_Staffordshire">Tamworth</a>
+more often than I’d like to. Most recently I was discussing its
+whereabouts in the UK and I ended my description with “basically the
+middle of nowhere” which led me to wonder if I can measure how remote
+Tamworth is and if there is a place that is the most “middle of
+nowhere”.
+   </p>
+   <p>
+    A <a href="https://en.wikipedia.org/wiki/Geographic_information_system">Geographic
+Information System</a> or GIS is software that handles <a href="https://en.wikipedia.org/wiki/Geographic_data_and_information">geospatial
+data</a> which is a term used to describe data that has components that
+deal with some location on the earth.
+   </p>
+   <p>
+    Geographical data typically come in two different forms: vector data
+and raster data.
+   </p>
+   <p>
+    Vector data describe geospatial data using three geometric
+primitives: points, lines and polygons. Raster data on the other hand
+represents informatoin using a grid of square cells where each cell is
+given a value.
+   </p>
+   <p>
+    Today I will be using vector data from the <a href="https://www.ons.gov.uk/">Office for National Statistics</a> and
+analysing it in Python using <a href="https://geopandas.org/en/stable/">geopandas</a>.
+   </p>
+   <p>
+    I first looked at the <a href="https://geoportal.statistics.gov.uk/search?q=Major%20Towns%20and%20Cities">Major
+Towns and Cities</a> dataset to get a feel for doing basic operations in
+geopandas. The ONS also released an <a href="https://ons.maps.arcgis.com/apps/MapJournal/index.html?appid=fb85539cdc4d4b7d9d34f9560092bb95">accompanying
+web visualisation</a> for the dataset if you want to check it out.
+   </p>
+   <p>
+    We use <a href="https://en.wikipedia.org/wiki/Latitude">latitude</a>
+and <a href="https://en.wikipedia.org/wiki/Longitude">longitude</a> to
+represent locations on our round earth however when working with data we
+often project it onto a 2-dimensional grid and the way we do this is
+defined by the <a href="https://en.wikipedia.org/wiki/Spatial_reference_system">Coordinate
+Reference System</a> or CRS which are identified by their <a href="https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset">EPSG
+code</a>.
+   </p>
+   <p>
+    Datasets from the ONS uses the <a href="https://epsg.io/27700">British National Grid</a> system which has
+an EPSG of 27700. This is important as I want to overlay my data onto a
+map of the United Kingdom which I get from <a href="https://www.openstreetmap.org/">OpenStreetMap</a> which uses the
+<a href="https://en.wikipedia.org/wiki/Web_Mercator_projection">Web
+Mercator Projection</a> so after importing my data I need to convert the
+data so that it uses the same coordinate system.
+   </p>
+   <p>
+    Plotting the data looks like this on the map
+   </p>
+   <p>
+    <img src="/blog/images/major-cities.png">
+   </p>
+   <p>
+    I now iterate through locations in the UK and score them based on
+their distance to the closest major city I use the <a href="https://www.data.gov.uk/dataset/c7bf33cf-7d7d-4117-b05c-22b9ee015e11/parishes-and-non-civil-parished-areas-december-2019-boundaries-ew-bgc">Parish
+dataset</a> from the ONS which contains vector data for parish
+boundaries in England and Wales.
+   </p>
+   <p>
+    After processing the data and performing the <a href="https://en.wikipedia.org/wiki/Power_transform">Box-Cox power
+transform</a> for my remoteness metric I get the following graph where
+lighter colours indicate a more remote area
+   </p>
+   <p>
+    <img src="/blog/images/remoteness.png">
+   </p>
+   <p>
+    Ranking <a href="https://geoportal.statistics.gov.uk/datasets/local-authority-districts-december-2019-boundaries-uk-bgc">Local
+Authority Districts</a> by their remoteness I get the following rankings
+for the most remote places in England and Wales.
+   </p>
+   <table class="striped">
+    <thead>
+     <tr>
+      <th scope="col">
+       Rank
+      </th>
+      <th scope="col">
+       Local Authority
+      </th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td>
+       1
+      </td>
+      <td>
+       Isles of Scilly
+      </td>
+     </tr>
+     <tr>
+      <td>
+       2
+      </td>
+      <td>
+       Isles of Anglesey
+      </td>
+     </tr>
+     <tr>
+      <td>
+       3
+      </td>
+      <td>
+       Gwynedd
+      </td>
+     </tr>
+     <tr>
+      <td>
+       4
+      </td>
+      <td>
+       Ceredigion
+      </td>
+     </tr>
+     <tr>
+      <td>
+       5
+      </td>
+      <td>
+       Pembrokeshire
+      </td>
+     </tr>
+    </tbody>
+   </table>
+   <p>
+    This seems pretty fair and I think I’ve successfully defended
+Tamworth.
+   </p>
+   <p>
+    [1]: Practical Geography for Statistics, <em>Office for National
+Statistics</em>
+   </p>
+   <p>
+    [2]: Major Towns and Cities, <em>Office for National
+Statistics</em>
+   </p>
+   <p>
+    [3]: Parishes and Non Civil Parished Areas, <em>Office for National
+Statistics</em>
+   </p>
+   <p>
+    [4]: Local Authority Districts, <em>Office for National
+Statistics</em>
+   </p>
+  </main>
+ </body>
+</html>
