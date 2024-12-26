@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Markov-Chain Monte Carlo algorithms for Bayesian inference
+   </h1>
+   <p>
+    <em>Implementing Metropolis-Hastings and Hamiltonian Monte Carlo in
+C++</em>
+   </p>
+   <p>
+    <em>26 December 2024</em>
+   </p>
+   <hline>
+    <p>
+     I’m going to write a bit about Markov Chain Monte Carlo, a class of
+algorithms that power large amounts of modern computational
+statistics.
+    </p>
+    <h1>
+     Monte Carlo
+    </h1>
+    <p>
+     When performing bayesian inference with complex models we often
+encounter statistical problems that we cannot solve analytically. For
+example, say that we’ve observed some data and we wanted to find the <a href="https://en.wikipedia.org/wiki/Bayes_estimator">Bayes Estimator</a>
+for our parameters given these observations. To get our estimates for
+our parameter we would need to take an expectation over the posterior
+distribution which is itself an integral expression over the posterior
+distribution.
+    </p>
+    <p>
+     Unfortunately we can seldom analytically solve for these outside for
+a few special cases since the posterior distribution often does not have
+a nice closed-form expression. As such, we find ourselves forced to turn
+to numerical methods to approximate the value of these integrals.
+    </p>
+    <p>
+     <a href="https://en.wikipedia.org/wiki/Monte_Carlo_method">Monte
+Carlo methods</a> are a class of algorithms that rely on random
+simulation and sampling to estimate the solution to problems. For
+example, we may use a simple Monte Carlo scheme to find the expected
+value of a distribution by sampling from the distribution and computing
+the sample average.
+    </p>
+    <p>
+     That is to say that we can make \(n\) observations, \(X_i\), drawn
+independently from the same distribution with expectation \(\mathbb E
+\left[ X_i \right] = \mu\) then we can approximate the expectation
+\(\mu\) by calculating the sample average which is just
+\(\frac{1}{n}\sum_{i=1}^n X_i\). As we take more and more samples the <a href="https://en.wikipedia.org/wiki/Law_of_large_numbers#Weak_law">weak
+law of large numbers</a> tells us that our sample average will get
+closer to the expectation.
+    </p>
+    <p>
+     We can also use this to take expectations over transformations of our
+distribution by taking the sample average of any function applied to the
+samples that we observe. For example, if we wanted to estimate the
+percentage of our distribution that falls below 5 then all we have to do
+is take the average of the indicator function applied to our sample.
+That would be \[I(x) = \begin{cases}1, &amp; x &lt; 5 \\ 0, &amp;
+\text{otherwise} \end{cases}\]
+    </p>
+    <p>
+     For example, if our sample is \(\{1, 8, 10, 2, 2, 6, 7, 3, 4, 10 \}\)
+then the value of our indicator for this sample would then be \(\{1, 0,
+0, 1, 1, 0, 0, 1, 1, 0\}\) which looks like this in a table.
+    </p>
+    <table>
+     <thead>
+      <tr>
+       <th scope="col">
+        Sample value
+       </th>
+       <th scope="col">
+        Indicator value
+       </th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <td>
+        1
+       </td>
+       <td>
+        1
+       </td>
+      </tr>
+      <tr>
+       <td>
+        8
+       </td>
+       <td>
+        0
+       </td>
+      </tr>
+      <tr>
+       <td>
+        10
+       </td>
+       <td>
+        0
+       </td>
+      </tr>
+      <tr>
+       <td>
+        2
+       </td>
+       <td>
+        1
+       </td>
+      </tr>
+      <tr>
+       <td>
+        2
+       </td>
+       <td>
+        1
+       </td>
+      </tr>
+      <tr>
+       <td>
+        6
+       </td>
+       <td>
+        0
+       </td>
+      </tr>
+      <tr>
+       <td>
+        7
+       </td>
+       <td>
+        0
+       </td>
+      </tr>
+      <tr>
+       <td>
+        3
+       </td>
+       <td>
+        1
+       </td>
+      </tr>
+      <tr>
+       <td>
+        4
+       </td>
+       <td>
+        1
+       </td>
+      </tr>
+      <tr>
+       <td>
+        10
+       </td>
+       <td>
+        0
+       </td>
+      </tr>
+     </tbody>
+    </table>
+    <p>
+     Averaging the values of the indicator function we estimate that 50%
+of our distribution falls below 5.
+    </p>
+    <h1>
+     Markov Chains
+    </h1>
+    <p>
+     Modern statistics tools use Monte Carlo methods based on Markov
+chains to perform Bayesian inference.
+    </p>
+    <p>
+     A <a href="https://en.wikipedia.org/wiki/Stochastic_process">stochastic
+process</a> is a series of random observations indexed by time that come
+fom a set of states called the state space. For example, we could model
+the weather as stochastic process where we index our process by the date
+and our state space consists of the labels “sunny” and “rainy”.
+    </p>
+    <p>
+     <a href="https://en.wikipedia.org/wiki/Markov_chain">Markov
+chains</a> are stochastic processes where the probability of entering a
+new state only depends on what state you’re currently in. So if we built
+a Markov chain to model the weather in the same way then I could fully
+specify my model with 4 parameters:
+    </p>
+    <ul>
+     <li>
+      The probability it is sunny tomorrow given that it is sunny
+today
+     </li>
+     <li>
+      The probability it is sunny tomorrow given that it is rainy
+today
+     </li>
+     <li>
+      The probability it is rainy tomorrow given that is sunny today
+     </li>
+     <li>
+      The probability it is rainy tomorrow given that is rainy today
+     </li>
+    </ul>
+    <p>
+     There’s a bit of redundancy here since probabilities that partition
+our state space add up to 1 and we only actually need two parameters
+since we can infer the other two probabilities. That being said, we can
+represent this information in a matrix: if we use \(S_t\) to represent
+the event where it is sunny at time \(t\) and \(R_t\) to represent the
+event where it is rainy at time \(t\) we can represent our model as a
+matrix as so
+    </p>
+    <p>
+     \[ \begin{bmatrix} P(R_{t + 1} | R_t) &amp; P(S_{t + 1} | R_t) \\
+P(R_{t + 1} | S_t) &amp; P(S_{t + 1} | S_t) \end{bmatrix} \]
+    </p>
+    <p>
+     If we give some values to these probabilities our transition matrix
+might look like this
+    </p>
+    <p>
+     \[ \begin{bmatrix} 0.6 &amp; 0.4 \\ 0.2 &amp; 0.8 \end{bmatrix}
+\]
+    </p>
+    <p>
+     We can graphically represent this with the following diagram
+    </p>
+    <p>
+     <img src="/blog/images/markov-chain.png">
+    </p>
+    <p>
+     In the above diagram representation of our Markov Chain our cicles
+represent our states and the arrows represent the probability of
+transitioning to each state given our current state.
+    </p>
+    <p>
+     We can now start asking questions about the long-run behaviour of our
+system such as “if I start in the sunny state what does our distribution
+of states look like after 5 steps?”. If we use \(P^{(n)}_{i,j}\) to
+denote the probability of being in state \(j\) after \(n\) steps if we
+start in state \(i\) then if \(M\) is our transition matrix of
+probabilities then we have \(P^{(n)}_{i, j} = M^n_{i, j}\) where \(M^n\)
+is the nth power of our transition matrix and represents repeated matrix
+multiplication and we can prove this fact using induction.
+    </p>
+    <p>
+     One interesting property about the behaviour of Markov chains in the
+long run is that they tend to “forget” where they start from. For
+example let’s look at some powers of our matrix
+    </p>
+    <p>
+     \[ \begin{align*} M^0 &amp;= \begin{bmatrix} 1 &amp; 1 \\ 1 &amp; 1
+\end{bmatrix} \\ M &amp;= \begin{bmatrix} 0.6 &amp; 0.4 \\ 0.2 &amp; 0.8
+\end{bmatrix} \\ M^2 &amp;= \begin{bmatrix} 0.44 &amp; 0.56 \\ 0.28
+&amp; 0.72 \end{bmatrix} \\ M^3 &amp;= \begin{bmatrix} 0.38 &amp; 0.62
+\\ 0.31 &amp; 0.69 \end{bmatrix} \\ M^{100} &amp;= \begin{bmatrix} 0.33
+&amp; 0.67 \\ 0.33 &amp; 0.67 \end{bmatrix} \\ \lim_{n \to \infty}M^n
+&amp;= \begin{bmatrix} \frac{1}{3} &amp; \frac{2}{3} \\ \frac{1}{3}
+&amp; \frac{2}{3} \end{bmatrix} \end{align*} \]
+    </p>
+    <p>
+     All of our rows look exactly the same and our columns are filled with
+the same value, this is saying that after a larger number of steps it
+doesn’t actually matter where we start from: in the long run our
+distribution of states tends to be the same no matter where we
+begin.
+    </p>
+    <p>
+     More concretely, in the long run on arbitrary day we have a one in
+three chance of seeing a rainy day and a two in three chance of it being
+sunny. This distribution of states is called the stationary distribution
+and we can prove that this distribution always exists for a finite state
+space using the <a href="https://galton.uchicago.edu/~lalley/Courses/312/MarkovChains.pdf">Krylov-Bogoliubov
+Argument</a>.
+    </p>
+    <h1>
+     Markov Chain Monte Carlo
+    </h1>
+    <p>
+     As discussed earlier, in computational statistics we often want to
+sample from complex distributions. But what if we could construct a
+Markov chain whose stationary distribution matches the distribution we
+want to sample? If we’re able to do this then we can sample from our
+distribution by simply walking through our markov chain.
+    </p>
+    <p>
+     Before continuing, one thing that we should note is that our
+distribution is potentially infinite: instead of “sunny” and “rainy” the
+support of our distribution could span the entire real number line.
+Furthermore, we could have a multivariate distribution where our
+observations are many real numbers, not just one.
+    </p>
+    <p>
+     In probability there’s the concept of a reversible markov chain. A
+Markov chain is reversible if the process we get from reversing the
+transition probabilities (or flipping the arrows in the diagram) has the
+same statistical properties as the original Markov chain.
+    </p>
+    <p>
+     If we have a stationary Markov chain like our Markov chain
+representing the long-run behaviour of our weather model from earlier
+then if it’s reversible we have \(P(X_t = j, X_t = i) = P(X_t = i, X_t =
+j)\). If the long-run probability of being in state \(i\) is \(\pi(i)\)
+then this equality becomes \(\pi(i) P(X_t = j | X_t = i) = \pi(j) P(X_t
+= i | X_t = j)\). This equality is called the detailed balance equation
+and any such \(\pi\) that satisfies this detailed balance equation must
+be a stationary distribution for our Markov chain. This is really
+powerful and it allows us to create a Markov chain for any distribution
+\(\pi\).
+    </p>
+    <p>
+     Let \(\pi\) be the distribution we want to sample from then if we let
+\(q_{i,j}\) be <em>any</em> Markov chain on out state space with
+non-zero probabilities such that \(q_{i,j} = q_{j, i}\) then we can
+construct a Markov chain \(p_{i, j}\)
+    </p>
+    <p>
+     \[ \begin{align*} p_{i, j} &amp;= \min\left(q_{i, j}, \frac{\pi_j
+q_{j, i}}{\pi_i} \right) \\ p_{i, i} &amp;= 1 - \sum_{j \neq i} p_{i, j}
+\end{align*} \]
+    </p>
+    <p>
+     We can interpret \(q_{i, j}\) as a “proposal” distribution that
+suggests where to explore in the sample space, then we use the actual
+distribution we want to sample from \(\pi\) to accept or reject this
+proposal.
+    </p>
+    <p>
+     Now for \(i \neq j\) we have
+    </p>
+    <p>
+     \[ \begin{align*} \pi_ip_{i, j} &amp;= \pi_i \min\left(q_{i, j},
+\frac{\pi_j q_{j, i}}{\pi_i} \right) \\ &amp;= \min\left(\pi_i q_{i, j},
+\pi_j q_{j, i} \right) \\ &amp;= \pi_i q_{i, j} \end{align*} \]
+    </p>
+    <p>
+     As per the theorem this proves that \(\pi\) is the stationary
+distribution of this Markov chain we constructed and that is the essence
+of the Metropolis-Hastings algorithm. In order to sample from our
+distribution all we have to do is simulate this Markov chain that we’ve
+constructed and the only requirements that we have on \(q\) are non-zero
+probabilities and an equal probability of getting to \(j\) from \(i\)
+and to \(i\) from \(j\).
+    </p>
+    <h1>
+     The Metropolis-Hastings algorithm
+    </h1>
+    <p>
+     Putting all of these together we form the basis for a basic Monte
+Carlo sampling algorithm. The algorithm generalises for to distributions
+of any dimension but for simplicity I stick to the one dimensional case.
+I used a standard normal distribution for my proposal distribution with
+\(\epsilon \sim \mathcal{N}(0, 1)\) and \(q_{i, j} = p_\epsilon(j -
+i))\) My implementation in C++ looks like this
+    </p>
+    <div class="sourceCode" id="cb1">
+     <pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cmath&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;functional&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;random&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> BURN_IN <span class="op">=</span> <span class="dv">10'000</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> EXPECTATION_SAMPLE_SIZE <span class="op">=</span> <span class="dv">100'000</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// One dimensional random walk metropolist</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> pdf<span class="op">&gt;</span> <span class="kw">class</span> RandomWalkMetropolis <span class="op">{</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>default_random_engine<span class="op"> </span>generator<span class="op">{};</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>normal_distribution<span class="op">&lt;</span><span class="dt">float</span><span class="op">&gt;</span> step_sampler<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>uniform_real_distribution<span class="op">&lt;</span><span class="dt">float</span><span class="op">&gt;</span> uniform_sampler<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> x<span class="op">{};</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  RandomWalkMetropolis<span class="op">()</span> <span class="op">:</span> step_sampler<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">),</span> uniform_sampler<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> initialise<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> BURN_IN<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>      sample<span class="op">();</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> sample<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> dx <span class="op">=</span> step_sampler<span class="op">(</span>generator<span class="op">);</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> proposal <span class="op">=</span> x <span class="op">+</span> dx<span class="op">;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> ratio <span class="op">=</span> pdf<span class="op">(</span>proposal<span class="op">)</span> <span class="op">/</span> pdf<span class="op">(</span>x<span class="op">);</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>uniform_sampler<span class="op">(</span>generator<span class="op">)</span> <span class="op">&lt;</span> ratio<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>      x <span class="op">=</span> proposal<span class="op">;</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x<span class="op">;</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> expectation<span class="op">(</span><span class="bu">std::</span>function<span class="op">&lt;</span><span class="dt">float</span><span class="op">(</span><span class="dt">float</span><span class="op">)&gt;</span> f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> total<span class="op">{};</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> EXPECTATION_SAMPLE_SIZE<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>      total <span class="op">+=</span> f<span class="op">(</span>sample<span class="op">());</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total <span class="op">/</span> EXPECTATION_SAMPLE_SIZE<span class="op">;</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="co">// Exponential distribution pdf</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> exponential<span class="op">(</span><span class="dt">float</span> x<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>x <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="bu">std::</span>exp<span class="op">(-</span>x<span class="op">);</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> g<span class="op">(</span><span class="dt">float</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="bu">std::</span>pow<span class="op">(</span><span class="dv">2</span><span class="op">,</span> x<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>  RandomWalkMetropolis<span class="op">&lt;</span>exponential<span class="op">&gt;</span> sampler<span class="op">{};</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>  sampler<span class="op">.</span>initialise<span class="op">();</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> sampler<span class="op">.</span>expectation<span class="op">(</span>g<span class="op">);</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
+    </div>
+    <p>
+     When run, the code outputs an approximation of \(\mathbb E_{x \sim
+\operatorname{Exp}(1)} = \int_{0}^{\infty} e^{-x} 2^x\).
+    </p>
+    <h1>
+     The Hamiltonian Monte Carlo algorithm
+    </h1>
+    <p>
+     The Metropolist-Hastings algorithm works really well given how simple
+it is. However, it has some drawbacks. The first is that our performance
+depends on our “proposal” distribution \(q\). While asymptotically the
+Metropolist algorithm will give us good approximations, in the short-run
+if our targret distribution has small regions of very high probability
+density then we may miss these regions during the proposal step or get
+stuck inside them during our sampling process, biasing our estimate.
+    </p>
+    <p>
+     Furthermore, our areas with high expectation take up a smaller
+proportion of our proposal space as we scale upwards towards higher
+dimensions making them harder to find since there are an exponential
+number of directions that we could explore.
+    </p>
+    <p>
+     Hamiltonian Monte Carlo attempts to remedy this by tuning the
+proposal distirbution to take into account gradient information from the
+target distribution. Hamiltonian Monte Carlo is based on ideas from
+statistical mechanics and we imagine that our proposal is a partical in
+a physical system that has “momentum” so alongisde our proposal
+\(\mathbf q\) we also have a momentum \(\mathbf p\) and the partial
+derivatives of the Hamiltonian tell us how our particle moves through
+space and how its momentum changes. These equations look like this
+    </p>
+    <p>
+     \[ \begin{align*} \frac{d\mathbf q}{dt} &amp;= \frac{\partial
+H}{\partial \mathbf p} \\ \frac{d\mathbf p}{dt} &amp;= - \frac{\partial
+H}{\partial \mathbf q} \end{align*} \]
+    </p>
+    <p>
+     What’s useful about Hamiltonian mechanics is that it describes a
+reversible process since not only can we tell where our particle will be
+at any point in time given its startling location and momentum but we
+can also find out where our particle came from, going backwards in time.
+This reversisibility allows us to use it for MCMC.
+    </p>
+    <p>
+     Hamiltonian Monte Carlo works by converting our distribution’s
+density function to a potential energy function which we put into the <a href="https://en.wikipedia.org/wiki/Boltzmann_distribution">Boltzman
+distribution</a> to get the probability of our particle being at a
+certain position.
+    </p>
+    <p>
+     The Boltzman distribution assigns probability a probability density
+proportional to \(\e^{\frac{E}{kT}}\) where \(E\) is the total energy of
+the system, \(k\) is the <a href="https://en.wikipedia.org/wiki/Boltzmann_constant">Boltzman
+constant</a> and \(T\) is the temperature. The toal energy in our system
+is the hamiltonian so we get \(p(\mathbf q, \mathbf p) \propto
+e^{\frac{H(q, p)}{kT}}\) and we can numerically solve for H using the <a href="https://en.wikipedia.org/wiki/Leapfrog_integration">leapfrog
+algorithm</a> algorithm.
+    </p>
+    <p>
+     My simplified implementation of the Hamiltonian Monte Carlo algorithm
+looks like this
+    </p>
+    <div class="sourceCode" id="cb2">
+     <pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cmath&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;functional&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;random&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">float</span> EPSILON <span class="op">=</span> <span class="fl">0.01</span><span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> LEAPFROG_STEPS <span class="op">=</span> <span class="dv">100</span><span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> EXPECTATION_STEPS <span class="op">=</span> <span class="dv">100'000</span><span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> BURN_IN <span class="op">=</span> <span class="dv">1'000</span><span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Distribution<span class="op">&gt;</span> <span class="kw">class</span> HamiltonianMC <span class="op">{</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> x<span class="op">{};</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>default_random_engine<span class="op"> </span>generator<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>normal_distribution<span class="op">&lt;</span><span class="dt">float</span><span class="op">&gt;</span> momentum_sampler<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>uniform_real_distribution<span class="op">&lt;</span><span class="dt">float</span><span class="op">&gt;</span> uniform_sampler<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  Distribution distribution<span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  HamiltonianMC<span class="op">()</span> <span class="op">:</span> momentum_sampler<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">),</span> uniform_sampler<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> initialise<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> BURN_IN<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>      sample<span class="op">();</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> sample<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> proposal <span class="op">=</span> x<span class="op">;</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> initial_momentum <span class="op">=</span> momentum_sampler<span class="op">(</span>generator<span class="op">);</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> momentum <span class="op">=</span> initial_momentum<span class="op">;</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> LEAPFROG_STEPS<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>      proposal <span class="op">+=</span> momentum <span class="op">*</span> EPSILON<span class="op">;</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>      momentum <span class="op">+=</span> EPSILON <span class="op">*</span> distribution<span class="op">.</span>logpdf_derivative<span class="op">(</span>proposal<span class="op">);</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> density_ratio <span class="op">=</span> distribution<span class="op">.</span>pdf<span class="op">(</span>proposal<span class="op">)</span> <span class="op">/</span> distribution<span class="op">.</span>pdf<span class="op">(</span>x<span class="op">);</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> kinetic_ratio <span class="op">=</span> <span class="bu">std::</span>exp<span class="op">(</span><span class="bu">std::</span>pow<span class="op">(</span>initial_momentum <span class="op">/</span> momentum<span class="op">,</span> <span class="dv">2</span><span class="op">));</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>uniform_sampler<span class="op">(</span>generator<span class="op">)</span> <span class="op">&lt;</span> density_ratio <span class="op">*</span> kinetic_ratio<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>      x <span class="op">=</span> proposal<span class="op">;</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x<span class="op">;</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> expectation<span class="op">(</span><span class="bu">std::</span>function<span class="op">&lt;</span><span class="dt">float</span><span class="op">(</span><span class="dt">float</span><span class="op">)&gt;</span> f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> total<span class="op">{};</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> EXPECTATION_STEPS<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>      total <span class="op">+=</span> f<span class="op">(</span>sample<span class="op">());</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total <span class="op">/</span> EXPECTATION_STEPS<span class="op">;</span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Exponential <span class="op">{</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>  Exponential<span class="op">()</span> <span class="op">{}</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> pdf<span class="op">(</span><span class="dt">float</span> x<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>x <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">std::</span>exp<span class="op">(-</span>x<span class="op">);</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> logpdf<span class="op">(</span><span class="dt">float</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">-</span>x<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> logpdf_derivative<span class="op">(</span><span class="dt">float</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> f<span class="op">(</span><span class="dt">float</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="bu">std::</span>pow<span class="op">(</span><span class="dv">2</span><span class="op">,</span> x<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>  HamiltonianMC<span class="op">&lt;</span>Exponential<span class="op">&gt;</span> sampler<span class="op">{};</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>  sampler<span class="op">.</span>initialise<span class="op">();</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> sampler<span class="op">.</span>expectation<span class="op">(</span>f<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
+    </div>
+    <p>
+     Modern implementations us No-U-Turn Sampling or NUTS introduced by
+Hoffman and Gelman in a paper titled <a href="https://arxiv.org/abs/1111.4246">The No-U-Turn Sampler: Adaptively
+Setting Path Lengths in Hamiltonian Monte Carlo</a> in 2011. The NUTS
+algorithm automatically tunes the number of steps taken during the
+leapfrog itegration phase of the algoirthm.
+    </p>
+    <p>
+     All in all I find it pretty cool how thermodynamics, statistical
+mechanics and Hamiltonian mechanics have found its way into sampling
+algorithms. It was a shock for me since I wasn’t familiar with physics
+let alone thermodynamics but I’m really happy that by learning about
+this I’ve gained a better understanding of modern day MCMC sampling
+algorithms and a tiny bit of physics and numerical methods too.
+    </p>
+    <h1>
+     References
+    </h1>
+    <p>
+     [1]: Turkman, M. Antónia Amaral, Carlos Daniel Paulino, and Peter
+Müller. Computational Bayesian statistics: an introduction. Vol. 11.
+Cambridge University Press, 2019.
+    </p>
+    <p>
+     [2]: Betancourt, Michael. “A conceptual introduction to Hamiltonian
+Monte Carlo.”
+    </p>
+    <p>
+     [3]: Kelly, Frank P. Reversibility and stochastic networks. Cambridge
+University Press, 2011.
+    </p>
+    <p>
+     [4]: Childers, David, et al. Differentiable state-space models and
+hamiltonian monte carlo estimation. No. w30573. National Bureau of
+Economic Research, 2022.
+    </p>
+   </hline>
+  </main>
+ </body>
+</html>
