@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Modelling the Limit Order Book as a continuous Markov Process
+   </h1>
+   <p>
+    <em>Learning about market microstructure</em>
+   </p>
+   <p>
+    28 December 2024
+   </p>
+   <hr>
+   <p>
+    The <a href="https://en.wikipedia.org/wiki/Central_limit_order_book">Limit
+Order Book</a> is an order matching method that’s used by most financial
+exchanges. On an exchange with an order book participants submit buy
+orders called “bids” and sell orders called “asks” alongisde the
+quantity of the asset that they would like to buy or sell.
+   </p>
+   <p>
+    As a diagram it looks a bit like this
+   </p>
+   <p>
+    <img src="/blog/images/limit-order-book.png">
+   </p>
+   <p>
+    These buy orders and sell orders are kept either somebody submits
+what’s called a “market order” or the trader that placed the order
+cancels it. A market order is an order that effectively asks to buy or
+sell at the best price available no matter what it is. For example, if
+the order book for a stock has two ask orders both with quantity 1 at
+$194 and $195 for one stock then if I submit a market order to buy this
+stock then the exchange would match me with the $194 ask order from the
+order book and we would trade at this price: I get the stock from the
+seller and the seller gets $194 from me. After this we’ve traded the ask
+order is removed from the order book since it only had quantity 1.
+   </p>
+   <p>
+    We call the difference between the most aggressive (highest) bid
+price and the most aggressive (lowest) ask price the bid-ask spread.
+Zero-intelligence models model the dynamics of the orderbook as a random
+process and even though they don’t model the individual behaviour of
+traders in the market according to <a href="https://www.pnas.org/doi/10.1073/pnas.0409157102">Farmer et al.
+(2005)</a> they are able to predict up to 95% of the variance in the
+bid-ask spread.
+   </p>
+   <p>
+    Typically we model the arrival of bid and ask orders as a <a href="https://en.wikipedia.org/wiki/Poisson_distribution">Poisson
+process</a> which looks like this as an SDE
+   </p>
+   <p>
+    \[dN_t = \begin{cases} 1 &amp;\text{with probability } \lambda dt \\
+0 &amp;\text{with probability } 1 - \lambda dt \end{cases} \]
+   </p>
+   <p>
+    In a basic model we can have independent poisson processes describing
+the arrival of bids ands asks for every possible price or “tick” so we’d
+have a poisson process describing the dynamics of $1 bids, $2 bids and
+so on. In this model we also use a poisson process to describe how bids
+and asks exit the order book. This is a basic <a href="https://en.wikipedia.org/wiki/Queueing_theory">queueing model</a>
+called a <a href="https://en.wikipedia.org/wiki/Birth%E2%80%93death_process">birth-death
+process</a>.
+   </p>
+   <p>
+    If we use \(\mu\) to refer to the rate at which orders leave our
+order book queues then we have the neat result that if \(\lambda &lt;
+\mu\) then our queueing system has a time-invariant steady state
+distribution. This means that in the long run our queue doesn’t grow
+indefinitely and we has a statistical distribution that doesn’t change
+throughout time, namely a geometric distribution with parameter \(1 -
+\frac{\lambda}{\mu}\). Furthermore, we can actually characterise the
+behaviour of this queue with a parameter \(\rho = \frac{\lambda}{\mu}\)
+and our queue is stable if \(\lambda &lt; \mu\) or \(\rho &lt; 1\).
+   </p>
+   <p>
+    In a simple system we have a perfect market maker who maintains a
+spread of exactly one tick. In this system we have a flat order book
+with unit bids and asks at every tick above the midprice and after a
+market order comes in and clears a limit order the dealer will place a
+bid to maintain the spread of 1 tick. However there are two ways of
+doing this: the the dealer can either submit a limit order on the same
+side as the incoming market order or on the opposite side. If we call
+the probability that the dealer places a limit orde on the same side as
+the market order \(u\) then we can model the midprice directly with an
+SDE.
+   </p>
+   <p>
+    Using \(P\) to denote the midprice, \( N_t^{\text{buy}} \sim
+\operatorname{Poisson}(\gamma^{\text{buy}})\) and \(N_t^{\text{sell}}
+\sim \operatorname{Poisson}(\gamma^\text{sell})\) to denote the poisson
+processes describing the incoming market buy orders and the market sell
+orders respectively, \(\Delta P\) to denote the smallest increment in
+price and \(Z \sim \operatorname{Bernoulli}(u)\) to represent the
+Bernoulli distributed random variable denoting which side the market
+maker places their limit order then we get the following SDE describing
+the dynamics of the mid price.
+   </p>
+   <p>
+    \[ dP = \Delta P (dN^{\text{buy}}_t - dN^{\text{sell}}_t) Z \]
+   </p>
+   <p>
+    Now, using a little bit of functional analysis we can work out the <a href="https://en.wikipedia.org/wiki/Infinitesimal_generator_%28stochastic_processes%29">infinitesimal
+generator</a> for out system. The infinitesimal generator describes the
+evolution of our system over a small time frame. I found <a href="https://www.youtube.com/watch?v=pUYQL_R7Sg0">this lecture
+video</a> helpful for getting a better idea of what the infinitesimal
+generator is and also <a href="https://www.youtube.com/watch?v=9tcGxfkgkg8">this lecture</a> that
+walks through the derivation of the infinitesimal generator for a
+Poisson process.
+   </p>
+   <p>
+    \[ \begin{align*} \mathcal{L}_f(p) &amp;= \lim_{t \to 0^+}
+\frac{\mathbb E \left[ \left. f(P_t) \right| P_0 = p \right] - f(p)}{t}
+\\ &amp;= \lim_{t \to 0^+} \frac{\mathbb E \left[ \left. f(P_t) - f(p)
+\right| P_0 = p \right]}{t} \\ &amp;= u \left( \gamma^{\text{buy}}
+\left(f(p + \Delta P) - f \right) + \gamma^{\text{sell}} \left( f(p -
+\Delta P) - f\right) \right) \\ &amp;= \frac{1}{2}u\left(
+\gamma^{\text{buy}} + \gamma^{\text{sell}} \right)(\Delta p)^2 \frac{f(p
++ \Delta P) - 2f + f(p - \Delta P)}{\Delta P^2} \\ &amp;+ u \left(
+\gamma^{\text{buy}} - \gamma^{\text{sell}} \right) \Delta P \frac{f(p +
+\Delta P) - f(p - \Delta P)}{2\Delta P} \end{align*} \]
+   </p>
+   <p>
+    The final equality is a trick from <a href="https://www.cambridge.org/core/books/limit-order-books/BF42FB9D69B6D4977363AB38995EE6E2">Gould
+et al. (2013)</a> and combined with the assumptions that \( u\left(
+\gamma^{\text{buy}} + \gamma^{\text{sell}} \right)\) tends to
+\(\sigma^2\) and \(u \left( \gamma^{\text{buy}} - \gamma^{\text{sell}}
+\right) \Delta P\) tends to \(\mu\) as the smallest tick price increment
+becomes arbitrarily small, this allows us to rewrite our gnerator as
+   </p>
+   <p>
+    \[ \frac{\sigma^2}{2}\frac{\partial f}{\partial p^2} + \mu
+\frac{\partial f}{\partial p} \]
+   </p>
+   <p>
+    This corresponds to the the generator for brownian motion with drift
+proportional to \(u \left( \gamma^{\text{buy}} - \gamma^{\text{sell}}
+\right)\). So in this basic model we find that the midprice is
+controlled by how the market maker interacts with the order book with
+the \(u\) parameter and also the difference in the arrival rates of
+market orders to buy and sell.
+   </p>
+   <p>
+    Taking a step back this makes sense: if \( \gamma^{\text{buy}} &gt;
+\gamma^{\text{sell}} \) and on average there are more buy orders than
+sell orders then in this model then the drift will be positive and the
+price will go up when \(u &gt; 0\). But what does \(u\) represent?
+   </p>
+   <p>
+    While I was learning about banking I learned about the Treynor model
+of the dealer in asset markets. In Treynor’s model the dealer is a
+profit-seeking agent who attempts control risk by limiting their
+exposure to the asset or how long or short they are on the asset in
+question. In Treynor’s model, if the dealer is heavily long on a
+security then they will quote lower prices to encourage market
+particiapnts to buy from the dealer, allowing the dealer sell and
+offload some of their holdings of the asset.
+   </p>
+   <p>
+    Using this idea, I think we can interpret \(u\) as representing how
+sensitive the dealer is to market pressure. When \(u\) is 1 then the
+dealer will place limit bid orders whenever seeing a market buy order
+which moves the price upwards in accordance to market demand. In
+Treynor’s model this corresponds to the dealer setting prices to help
+control their exposure to the asset that they’re trading.
+   </p>
+   <p>
+    There are more sophisticated models of the order book that are really
+interesting. I was watching <a href="https://www.youtube.com/watch?v=cWjVQ2Iw8HY">a lecture by Frank
+Kelly</a> descrbing a simple Markovian model of the order book that
+rendered some problems analytically tractable. In the lecture he shows
+how you can use this model to analyse the game-theoretic nash
+equilibrium market making strategies and how they change after
+introducing new policies or regulation.
+   </p>
+   <p>
+    <a href="https://www.tandfonline.com/doi/full/10.1080/01621459.2014.982278?casa_token=B0xwGJBv1z8AAAAA%3AXRhMLiwHIeVHq593CtkH1k2hQyAaBTfvc-6YKBLu0UgtiGvR6l-eiflK1CGrflCKFkttEsHyqg">Huang
+et al. (2015)</a> introduce what they call the queue-reactive model
+where the rate at which orders arrive depend on the state of the order
+book which turns out to model the stationary state of the order book
+really well and closely match empirically observed market data from
+exchanges.
+   </p>
+   <p>
+    Learning about modelling order books was really interesting seeing
+all the different approaches and comparing how they analyse order book
+dynamics. The appeareance of the infinitesimal generator was extremely
+surprising, my textbook assumed knowledge of it and didn’t spend any
+time introducing the idea or explaining how it works but learning about
+it was really cool and I found it really interesting how manipulating it
+revealed insights into the dynamics of the system that it modelled.
+   </p>
+   <p>
+    All in all, modelling market microstructure was really
+interesting.
+   </p>
+   <h1>
+    References
+   </h1>
+   <p>
+    [1]: Abergel, Frédéric, et al. Limit order books. Cambridge
+University Press, 2016.
+   </p>
+   <p>
+    [2]: Huang, Weibing, Charles-Albert Lehalle, and Mathieu Rosenbaum.
+“Simulating and analyzing order book data: The queue-reactive model.”
+Journal of the American Statistical Association 110.509 (2015):
+107-122.
+   </p>
+   <p>
+    [3]: Kelly, Frank, and Elena Yudovina. “A Markov model of a limit
+order book: thresholds, recurrence, and trading strategies.” Mathematics
+of Operations Research 43.1 (2018): 181-203.
+   </p>
+   <p>
+    [4]: Hambly, Ben. “Introduction to Limit Order Book Markets”
+   </p>
+   <p>
+    [5]: Gould, Martin D., et al. “Limit order books.” Quantitative
+Finance 13.11 (2013): 1709-1742.
+   </p>
+   <p>
+    [6]: Farmer, J. Doyne, Paolo Patelli, and Ilija I. Zovko. “The
+predictive power of zero intelligence in financial markets.” Proceedings
+of the National Academy of Sciences 102.6 (2005): 2254-2259.
+   </p>
+   <p>
+    [7]: Harry Sapranidis Mantelos, “Limit Order Book Modeling”
+   </p>
+   <p>
+    [8]: Kelly, Frank, and Elena Yudovina. “A Markov model of a limit
+order book: thresholds, recurrence, and trading strategies.” Mathematics
+of Operations Research 43.1 (2018): 181-203.
+   </p>
+  </main>
+ </body>
+</html>
