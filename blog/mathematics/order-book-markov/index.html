@@ -126,7 +126,7 @@ the dynamics of the mid price.
    </p>
    <p>
     Now, using a little bit of functional analysis we can work out the <a href="https://en.wikipedia.org/wiki/Infinitesimal_generator_%28stochastic_processes%29">infinitesimal
-generator</a> for out system. The infinitesimal generator describes the
+generator</a> for our system. The infinitesimal generator describes the
 evolution of our system over a small time frame. I found <a href="https://www.youtube.com/watch?v=pUYQL_R7Sg0">this lecture
 video</a> helpful for getting a better idea of what the infinitesimal
 generator is and also <a href="https://www.youtube.com/watch?v=9tcGxfkgkg8">this lecture</a> that
@@ -148,11 +148,12 @@ this
    </p>
    <p>
     The final equality is a trick from <a href="https://www.cambridge.org/core/books/limit-order-books/BF42FB9D69B6D4977363AB38995EE6E2">Gould
-et al. (2013)</a> and combined with the assumptions that \( u\left(
-\gamma^{\text{buy}} + \gamma^{\text{sell}} \right)\) tends to
-\(\sigma^2\) and \(u \left( \gamma^{\text{buy}} - \gamma^{\text{sell}}
-\right) \Delta P\) tends to \(\mu\) as the smallest tick price increment
-becomes arbitrarily small, this allows us to rewrite our gnerator as
+et al. (2013)</a>, the textbook I’m learning from. Combined with the
+assumptions that \( u\left( \gamma^{\text{buy}} + \gamma^{\text{sell}}
+\right)\) tends to \(\sigma^2\) and \(u \left( \gamma^{\text{buy}} -
+\gamma^{\text{sell}} \right) \Delta P\) tends to \(\mu\) as the smallest
+tick price increment becomes arbitrarily small, this allows us to
+rewrite our gnerator as
    </p>
    <p>
     \[ \frac{\sigma^2}{2}\frac{\partial f}{\partial p^2} + \mu
@@ -175,7 +176,7 @@ price will go up when \(u &gt; 0\). But what does \(u\) represent?
    <p>
     While I was learning about banking I learned about the Treynor model
 of the dealer in asset markets. In Treynor’s model the dealer is a
-profit-seeking agent who attempts control risk by limiting their
+profit-seeking agent who attempts to control risk by limiting their
 exposure to the asset or how long or short they are on the asset in
 question. In Treynor’s model, if the dealer is heavily long on a
 security then they will quote lower prices to encourage market
@@ -208,13 +209,14 @@ really well and closely match empirically observed market data from
 exchanges.
    </p>
    <p>
-    Learning about modelling order books was really interesting seeing
-all the different approaches and comparing how they analyse order book
-dynamics. The appeareance of the infinitesimal generator was extremely
-surprising, my textbook assumed knowledge of it and didn’t spend any
-time introducing the idea or explaining how it works but learning about
-it was really cool and I found it really interesting how manipulating it
-revealed insights into the dynamics of the system that it modelled.
+    Learning about modelling order books was really interesting and it
+was fun seeing all the different approaches and comparing how they
+analyse order book dynamics. The appeareance of the infinitesimal
+generator was extremely surprising, my textbook assumed knowledge of it
+and didn’t spend any time introducing the idea or explaining how it
+works but learning about it was really cool and I found it really
+interesting how manipulating it revealed insights into the dynamics of
+the system that it modelled.
    </p>
    <p>
     All in all, market microstructure models are really interesting.
