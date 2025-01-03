@@ -184,9 +184,9 @@ p^3\right) + p\left(\left(1 - p\right)^3 + 3\left(1 - p\right)^2p
    </p>
    <p>
     In general for an \(n\)-bit predictor we mispredict with probability
-\[ \left(p \sum_{i = 1}^{\lceil \frac{n}{2} \rceil} (1 - p)^ip^{n - i}
-\right) + \left( (1 - p) \sum_{i = 1}^{\lceil \frac{n}{2} \rceil} p^i(1
-- p)^{n - i} \right) \]
+\[ \left(p \sum_{i = 1}^{\lceil \frac{n}{2} \rceil} \binom{n}{i} (1 -
+p)^ip^{n - i} \right) + \left( (1 - p) \sum_{i = 1}^{\lceil \frac{n}{2}
+\binom{n}{i} \rceil} p^i(1 - p)^{n - i} \right) \]
    </p>
    <p>
     I’m not sure if there’s a nice closed-form for this but we can use

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Numerically estimating parameters for a GLM using Iteratively
+Reweighted Least Squares and LU decomposition
+   </h1>
+   <p>
+    <em>Learning GLM theory and writing code in C++ using Eigen</em>
+   </p>
+   <p>
+    <em>3 January 2025</em>
+   </p>
+   <hr>
+   <p>
+    One of the most fundametal models in statistics is the linear model.
+For an \(m \times n\) matrix \(\mathbf X\) representing \(m\)
+observations of \(n\) features then our linear model takes the following
+form
+   </p>
+   <p>
+    \[ \begin{align*} \hat{Y} &amp;= \mu(X) \\ &amp;= \mathbf X \mathbf
+\beta \end{align*} \]
+   </p>
+   <p>
+    One of the assumptions for the basic linear model is \(Y_i | X_i \sim
+\mathcal{N} (\mu(X_i), \sigma)\) where \(\mu (X_i) = X_i \mathbf
+\beta\). This means that that given our predictor the response variable
+is normally distributed. This implies that our error terms are normal.
+However, if we’re trying to predict the outcome of binary data then this
+model could not possibly work since for a given \(X_i\) our error can
+only be \(1 - X_i\mathbf \beta\) when \(Y_i\) is 1 and \(-X_i \mathbf
+\beta\) when \(Y_i\) is 0 which clearly is not normal as it can only
+take on two values.
+   </p>
+   <p>
+    <a href="https://en.wikipedia.org/wiki/Generalized_linear_model">Generalised
+Linear Models</a> generalise the basic linear regression model for
+situations where the response variable is not normally distributed. GLMs
+make the assumption that the response variable comes from a distribution
+in the <a href="https://en.wikipedia.org/wiki/Exponential_family">exponential
+family</a> which contains many commonly used distributions such as the
+normal distribution, the beta distribution, the binomial distribution
+and the Poisson distribution.
+   </p>
+   <p>
+    A distribution from the exponential family has the following form
+   </p>
+   <p>
+    \[ f(x) = \operatorname{exp}\left\{ \frac{x\theta -
+b(\theta)}{a(\phi)} + h(x, \phi) \right\} \]
+   </p>
+   <p>
+    And we call \(\theta\) the location parameter and \(\phi\) the scale
+parameter.
+   </p>
+   <p>
+    While learning about GLMs, one thing that I noticed about the
+exponential family is that there are so many different but equivalent
+parameterisations for it. The textbooks, lecture slides, youtube videos
+and exercise sheets that I referenced all used different formulations
+that defined the same class of distributions.
+   </p>
+   <p>
+    With GLMs we try to predict a function of the response variable as a
+linear function. This means that our models are now of the following
+form
+   </p>
+   <p>
+    \[ \begin{align*} g(\hat Y) &amp;= \mathbf X \mathbf \beta \\ \hat Y
+&amp;= g^{-1}(\mathbf X \mathbf \beta) \end{align*} \]
+   </p>
+   <p>
+    We call \(g\) the “link function”. It turns out that when our
+response variable \(Y_i\) follows a distribution in the exponential
+family then setting \(g\) to be \(\theta\) from our paramterisation
+gives us nice statistical properties and we call this choice of link
+function the “canonical link”.
+   </p>
+   <p>
+    So what we effectively do is reparameterise our distribution to be
+written as a member of the exponential family and try to learn the
+exponential family parameter \(\theta\). Our link function then allows
+us to find the parameterfor the original form of our distribution by
+using the value of \(\theta\) that we’ve learned.
+   </p>
+   <p>
+    I derived the exponential family form for the Binomial and Bernoulli
+distributions as practice and the logit function fell out which blew my
+mind since it explains why we use its inverse, the logistic sigmoid, for
+logistic regression: it’s just a special case of the GLM where our
+response variable is binomially distributed.
+   </p>
+   <p>
+    Now that we have our model, how do we fit it? One way is by finding
+the Maximum Likelihood Estimate for our parameter \(\theta\). Our
+exponential family is in a pretty nice form to find the log likelihood
+and it looks like this
+   </p>
+   <p>
+    \[ \ell(\theta | y) = \frac{y\theta - b(\theta)}{a(\phi)} + h(y,
+\theta) \]
+   </p>
+   <p>
+    Assuming our observations are independent, we would like to maximise
+the product of the likelihoods which is equivalent to maximising the sum
+of the log-likelihoods. Our derivative with respect to \(\theta\) looks
+like this
+   </p>
+   <p>
+    \[ \frac{d\ell}{d\theta} = \frac{y - b’(\theta)}{a(\phi)} \]
+   </p>
+   <p>
+    At the ideal value when this derivative is 0 we get
+   </p>
+   <p>
+    \[ \begin{align*} \frac{y - b’(\theta)}{a(\phi)} &amp;= 0 \\ y -
+b’(\theta) &amp;= 0 \end{align*} \]
+   </p>
+   <p>
+    And after taking expectations of everything we get
+   </p>
+   <p>
+    \[ \begin{align*} y - b’(\theta) &amp;= 0 \\ \mathbb E \left [ \left.
+y - b’(\theta) \right | x \right ] &amp;= 0 \\ \mathbb E \left [ \left.
+y \right | x \right ] &amp;= \mathbb E \left [ \left. b’(\theta) \right
+| x \right ] \\ \mu(x) &amp;= b’(\theta) \end{align*} \]
+   </p>
+   <p>
+    Since for a canonical link \(g(\mu) = \theta\) we also have \(g(\mu)
+= \theta\) the canonical link must take the form \(g(\mu) =
+{b’}^{-1}(\mu)\). However we also know that for the exponential family
+we have \(\mu = b’(\theta)\) so we have
+   </p>
+   <p>
+    \[ \begin{align*} \mathbf \theta &amp;= {b’}^{-1}(\mu) \\ \mathbf
+\theta &amp;= {b’}^{-1}(g^{-1}(\mathbf X \mathbf \beta)) \end{align*}
+\]
+   </p>
+   <p>
+    Using the result from earlier, when \(g\) is the canonical link this
+becomes
+   </p>
+   <p>
+    \[ \begin{align*} \mathbf \theta &amp;= {b’}^{-1}({b’}(\mathbf X
+\mathbf \beta)) \\ \mathbf \theta &amp;= \mathbf X \mathbf \beta
+\end{align*} \]
+   </p>
+   <p>
+    So when we maximise the log likelihood, our linear model directly
+learns the \(\theta\) parameter.
+   </p>
+   <p>
+    For a set of observations, our log-likelihood looks like this when we
+use the canonical link
+   </p>
+   <p>
+    \[ \ell(\mathbf Y) \propto \sum_{i} Y_i X_i \beta - b(X_i \beta)
+\]
+   </p>
+   <p>
+    Differentiating our likelihood function with respect to \(\beta\) we
+get
+   </p>
+   <p>
+    \[ \begin{align*} \frac{d\ell}{d\beta} &amp;\propto \sum_i Y_iX_i -
+X_i b’(X_i\beta) \\ &amp;\propto \sum_i Y_iX_i - X_i\mu_i \\
+&amp;\propto \sum_i Y_iX_i - \mu_i X_i \\ &amp;\propto \sum_i (Y_i -
+\mu_i) X_i \\ &amp;\propto (\mathbf Y - \mathbf \mu)^{\top}\mathbf X \\
+&amp;\propto (\mathbf Y - g^{-1}(\mathbf X \beta))^{\top}\mathbf X \\
+&amp;\propto \mathbf Y^{\top} \mathbf X - g^{-1}(\mathbf X \beta)^{\top}
+\mathbf X \\ \end{align*} \]
+   </p>
+   <p>
+    If the link function is the identity which corresponds to the normal
+distribution then when this is zero we have
+   </p>
+   <p>
+    \[ \begin{align*} \beta^{\top} \mathbf X^{\top} \mathbf X &amp;=
+\mathbf Y^{\top} \mathbf X \\ \beta^{\top} &amp;= \mathbf Y^{\top}
+\mathbf X (\mathbf X^{\top} \mathbf X)^{-1} \\ \beta &amp;=(\mathbf
+X^{\top} \mathbf X)^{-1} \mathbf X^{\top} \mathbf Y \\ \end{align*}
+\]
+   </p>
+   <p>
+    Which I recognise from the usual least squares regression.
+   </p>
+   <p>
+    When we use a different link function then after some algebra we find
+that we need to solve \(\mathbf X^{\top} W (\mathbf Y - \mathbf X\beta)
+= 0\) where \(W\) is a diagonal matrix and \(W_{i, i}\) holds the
+variance for a random variable with mean \(\mu_i\). We have a few
+different way to solve this, one is the standard <a href="https://en.wikipedia.org/wiki/Newton%27s_method">Newton-Raphson
+procedure</a> for numerically solving equations but another interesting
+technique is called <a href="https://en.wikipedia.org/wiki/Iteratively_reweighted_least_squares">Iteratively
+Reweighted Least Squares</a>.
+   </p>
+   <p>
+    IRLS starts by using <a href="https://en.wikipedia.org/wiki/Scoring_algorithm">Fisher’s scoring
+algorithm</a>, a variation of Newton-Raphson, which tells us that if we
+have a guess for our solution, \(\beta\), then we can find a better
+guess \(\beta’\) by calculating the following
+   </p>
+   <p>
+    \[ \begin{align*} \beta’ &amp;= (\mathbf X^{\top}W\mathbf
+X)^{-1}\mathbf X^{\top} W (\mathbf Y - \mathbf \mu + \mathbf X \beta) \\
+&amp;= (\mathbf X^{\top}W\mathbf X)^{-1}\mathbf X^{\top} W (\mathbf Y -
+\mathbf g^{-1}(\mathbf X \beta) + \mathbf X \beta) \end{align*} \]
+   </p>
+   <p>
+    We can notice that this has the form of a <a href="https://en.wikipedia.org/wiki/Weighted_least_squares">weighted
+least squares</a> problem which has a closed form solution.
+   </p>
+   <p>
+    Taking advantage of this, the IRLS algorithm effectively solves for
+\(\beta\) using the scoring algorithm but uses the weighted
+least-squares form of the updates to get our new guess for
+\(\beta\).
+   </p>
+   <p>
+    Now that I’ve learned the theory behind GLMs and how to fit them, I
+can now code up a model in C++ using Eigen. My code looks like this
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Eigen/Dense&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cmath&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> <span class="kw">namespace</span> Eigen<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> ITERATIONS <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Bernoulli <span class="op">{</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  VectorXd canonical_link_inverse<span class="op">(</span><span class="at">const</span> VectorXd <span class="op">&amp;</span>x<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fl">1.0</span> <span class="op">/</span> <span class="op">(</span><span class="fl">1.0</span> <span class="op">+</span> <span class="op">(-</span>x<span class="op">.</span>array<span class="op">()).</span>exp<span class="op">());</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  VectorXd variance<span class="op">(</span><span class="at">const</span> VectorXd <span class="op">&amp;</span>x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> x<span class="op">.</span>array<span class="op">()</span> <span class="op">*</span> <span class="op">(</span><span class="dv">1</span> <span class="op">-</span> x<span class="op">.</span>array<span class="op">());</span> <span class="op">}</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Distribution<span class="op">&gt;</span> <span class="kw">class</span> GLM <span class="op">{</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  Distribution distribution<span class="op">;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  VectorXd fit<span class="op">(</span><span class="at">const</span> MatrixXd <span class="op">&amp;</span>X<span class="op">,</span> <span class="at">const</span> VectorXd <span class="op">&amp;</span>Y<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    VectorXd beta<span class="op">(</span><span class="dv">4</span><span class="op">);</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Arbitrary initial guess</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    beta <span class="op">&lt;&lt;</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> ITERATIONS<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>      VectorXd <span class="va">g_mu</span> <span class="op">=</span> X <span class="op">*</span> beta<span class="op">;</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>      VectorXd mean <span class="op">=</span> distribution<span class="op">.</span>canonical_link_inverse<span class="op">(</span><span class="va">g_mu</span><span class="op">);</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>      VectorXd w_values <span class="op">=</span> distribution<span class="op">.</span>variance<span class="op">(</span>mean<span class="op">);</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>      MatrixXd W <span class="op">=</span> w_values<span class="op">.</span>asDiagonal<span class="op">();</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>      VectorXd Z <span class="op">=</span> X <span class="op">*</span> beta <span class="op">+</span> W<span class="op">.</span>inverse<span class="op">()</span> <span class="op">*</span> <span class="op">(</span>Y <span class="op">-</span> mean<span class="op">);</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>      MatrixXd XTWX <span class="op">=</span> X<span class="op">.</span>transpose<span class="op">()</span> <span class="op">*</span> W <span class="op">*</span> X<span class="op">;</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>      VectorXd XTWZ <span class="op">=</span> X<span class="op">.</span>transpose<span class="op">()</span> <span class="op">*</span> W <span class="op">*</span> Z<span class="op">;</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>      beta <span class="op">=</span> XTWX<span class="op">.</span>ldlt<span class="op">().</span>solve<span class="op">(</span>XTWZ<span class="op">);</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> beta<span class="op">;</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>  GLM<span class="op">&lt;</span>Bernoulli<span class="op">&gt;</span> glm<span class="op">;</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>  MatrixXd X<span class="op">(</span><span class="dv">4</span><span class="op">,</span> <span class="dv">4</span><span class="op">);</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>  X <span class="op">&lt;&lt;</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">9</span><span class="op">,</span> <span class="dv">12</span><span class="op">,</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>       <span class="dv">5</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>       <span class="dv">2</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>       <span class="dv">6</span><span class="op">,</span> <span class="dv">9</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">;</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>  X <span class="op">=</span> X<span class="op">.</span>transpose<span class="op">().</span>eval<span class="op">();</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>  VectorXd Y<span class="op">(</span><span class="dv">4</span><span class="op">);</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>  Y <span class="op">&lt;&lt;</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>  VectorXd weights <span class="op">=</span> glm<span class="op">.</span>fit<span class="op">(</span>X<span class="op">,</span> Y<span class="op">);</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> <span class="st">"Weights: "</span> <span class="op">&lt;&lt;</span> weights <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
+   </div>
+   <p>
+    In my code I don’t actually calculate \(\beta’ = (\mathbf
+X^{\top}W\mathbf X)^{-1}\mathbf X^{\top} W (\mathbf Y - \mathbf
+g^{-1}(\mathbf X \beta) + \mathbf X \beta)\). Instead, I rewrite the
+equality as \( \mathbf X^{\top}W\mathbf X\beta’ = \mathbf X^{\top} W
+(\mathbf Y - \mathbf g^{-1}(\mathbf X \beta) + \mathbf X \beta) \) and
+call an Eigen routine to directly solve for \(\beta’\).
+   </p>
+   <p>
+    I did this because it’s faster to directly solve for \(\beta\) using
+LU decomposition rather than both invert the matrix and perform the
+matrix multiplication with the inverse matrix. In an earlier version of
+this project I was solving a similar problem in Python and I wrote the
+LU decomposition and backward-forward substition manually.
+   </p>
+   <p>
+    I found that I had to learn a lot to get an understanding of GLMs but
+I found it really cool that logistic regression was just a special case
+of something much more general.
+   </p>
+   <h1>
+    References
+   </h1>
+   <p>
+    [1]: Rigollet, Philippe. Statistics for Applications, Lecture 10.
+Massachusetts Institute of Technology: MIT OpenCouseWare
+   </p>
+   <p>
+    [2]: Montgomery, Douglas C., Elizabeth A. Peck, and G. Geoffrey
+Vining. Introduction to linear regression analysis. John Wiley &amp;
+Sons, 2021.
+   </p>
+  </main>
+ </body>
+</html>
