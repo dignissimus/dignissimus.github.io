@@ -6,9 +6,8 @@
   <link rel="stylesheet" href="/blog/pico.min.css">
   <link rel="stylesheet" href="/blog/index.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
-  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
-  <script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
   <link rel="stylesheet" href="/blog/dracula.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
@@ -186,7 +185,7 @@ p^3\right) + p\left(\left(1 - p\right)^3 + 3\left(1 - p\right)^2p
     In general for an \(n\)-bit predictor we mispredict with probability
 \[ \left(p \sum_{i = 1}^{\lceil \frac{n}{2} \rceil} \binom{n}{i} (1 -
 p)^ip^{n - i} \right) + \left( (1 - p) \sum_{i = 1}^{\lceil \frac{n}{2}
-\binom{n}{i} \rceil} p^i(1 - p)^{n - i} \right) \]
+\rceil} \binom{n}{i} p^i(1 - p)^{n - i} \right) \]
    </p>
    <p>
     I’m not sure if there’s a nice closed-form for this but we can use
