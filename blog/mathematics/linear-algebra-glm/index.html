@@ -122,7 +122,7 @@ and it looks like this
    </p>
    <p>
     \[ \ell(\theta | y) = \frac{y\theta - b(\theta)}{a(\phi)} + h(y,
-\theta) \]
+\phi) \]
    </p>
    <p>
     Assuming our observations are independent, we would like to maximise
@@ -187,12 +187,12 @@ get
    </p>
    <p>
     \[ \begin{align*} \frac{d\ell}{d\beta} &amp;\propto \sum_i Y_iX_i -
-X_i b’(X_i\beta) \\ &amp;\propto \sum_i Y_iX_i - X_i\mu_i \\
-&amp;\propto \sum_i Y_iX_i - \mu_i X_i \\ &amp;\propto \sum_i (Y_i -
-\mu_i) X_i \\ &amp;\propto (\mathbf Y - \mathbf \mu)^{\top}\mathbf X \\
-&amp;\propto (\mathbf Y - g^{-1}(\mathbf X \beta))^{\top}\mathbf X \\
-&amp;\propto \mathbf Y^{\top} \mathbf X - g^{-1}(\mathbf X \beta)^{\top}
-\mathbf X \\ \end{align*} \]
+X_i b’(X_i\beta) \\ &amp;\propto \sum_{i=1}^n Y_iX_i - X_i\mu_i \\
+&amp;\propto \sum_{i=1}^n Y_iX_i - \mu_i X_i \\ &amp;\propto
+\sum_{i=1}^n (Y_i - \mu_i) X_i \\ &amp;\propto (\mathbf Y - \mathbf
+\mu)^{\top}\mathbf X \\ &amp;\propto (\mathbf Y - g^{-1}(\mathbf X
+\beta))^{\top}\mathbf X \\ &amp;\propto \mathbf Y^{\top} \mathbf X -
+g^{-1}(\mathbf X \beta)^{\top} \mathbf X \\ \end{align*} \]
    </p>
    <p>
     If the link function is the identity which corresponds to the normal
@@ -231,7 +231,8 @@ X)^{-1}\mathbf X^{\top} W (\mathbf Y - \mathbf \mu + \mathbf X \beta) \\
 \mathbf g^{-1}(\mathbf X \beta) + \mathbf X \beta) \end{align*} \]
    </p>
    <p>
-    We can notice that this has the form of a <a href="https://en.wikipedia.org/wiki/Weighted_least_squares">weighted
+    We can notice that we can transform this slightly so it has the form
+of a <a href="https://en.wikipedia.org/wiki/Weighted_least_squares">weighted
 least squares</a> problem which has a closed form solution.
    </p>
    <p>
