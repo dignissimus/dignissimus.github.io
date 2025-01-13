@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Numerically solving recurrence relations in parallel
+   </h1>
+   <p>
+    <em>Learning Julia because it’s trendy</em>
+   </p>
+   <p>
+    <strong>13 Janurary 2025</strong>
+   </p>
+   <hr>
+   <p>
+    Given an array of data \(d_i\), its <a href="https://en.wikipedia.org/wiki/Prefix_sum">prefix sum</a> is a new
+array of data where every element of the array is transformed by adding
+it to the sum of all elements that preceed it. This is basically a
+cumulative sum where
+   </p>
+   <p>
+    \[ \operatorname{prefix} (d)_i = \sum_{j=1}^i d_j \]
+   </p>
+   <p>
+    We can use the prefix sum to estimate <a href="https://en.wikipedia.org/wiki/Cumulative_distribution_function">CDFs</a>
+when given relative likelihoods or count data. This is the discrete
+parallel for integrating over continuous functions.
+   </p>
+   <p>
+    We can rewrite the definition of the prefix sum slightly and put it
+in a different form
+   </p>
+   <p>
+    \[ \begin{align*} \operatorname{prefix}(d)_i &amp;= d_i + \sum_{j =
+1}^{i - 1} d_j \\ \operatorname{prefix}(d)_i &amp;= d_ i +
+\operatorname{prefix}(d)_{i - 1} \\ \end{align*} \]
+   </p>
+   <p>
+    This form defines the prefix sum in terms of previous values of
+itself and we can calculate the prefix sum in a simple fashion by
+sequentially applying its definition
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode hs"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>prefix xs <span class="ot">=</span> go <span class="dv">0</span> xs</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    go _ [] <span class="ot">=</span> []</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    go acc (x <span class="op">:</span> xs) <span class="ot">=</span> (acc <span class="op">+</span> x) <span class="op">:</span> go (acc <span class="op">+</span> x) xs</span></code></pre>
+   </div>
+   <p>
+    This is an instance of what’s called a “scan” or reduction operation.
+In Julia I could write this iteratively like this
+   </p>
+   <pre><code>function prefix(X :: AbstractArray{Int8, N}) :: AbstractArray{Int8, N} where N
+    result = similar(X, Int8)
+    result[1] = X[1]
+    for index in 2:length(X)
+        result[index] = X[index] + result[index - 1]
+    end
+    return result
+end</code></pre>
+   <p>
+    But Julia also has a scan function called <code>accumulate</code> so
+I can also write it like this
+   </p>
+   <pre><code>array = Vector{Int64}[1, 2, 3, 4, 5]
+println(accumulate(+, array))</code></pre>
+   <p>
+    At a first glance this looks difficult to parallelise since the
+definition of \(x_i\) depends on the value of \(x_{i-1}\) however we can
+split our computation of the prefix sum into several steps where each
+step can be decomposed into tasks that run in parallel to eachother.
+   </p>
+   <p>
+    If we wanted to compute the sum of our array in parallel we might use
+a <a href="https://en.wikipedia.org/wiki/Divide-and-conquer_algorithm">divide-and-conquer</a>
+approach where we repeatedly split our array in half and assign the task
+of calculating the partial sums of our partitions to each of our compute
+units. As a diagram it looks like this
+   </p>
+   <p>
+    <img src="/blog/images/sum-divide-conquer.png">
+   </p>
+   <p>
+    This works because at each step the work a compute unit is doing is
+independent of the work that other compute units are doing at the same
+time. If we move our nodes in our diagram a bit to the right we can get
+a bit of visual intuition for the algorithm that calculates the prefix
+sums in parallel.
+   </p>
+   <p>
+    <img src="/blog/images/sum-divide-conquer-slant.png">
+   </p>
+   <p>
+    If we associate each of the internal nodes from this tree with the
+array index it sits on top of then we can interpret each level as
+computing a portion of the value of the prefix sum for that index. So
+after the first step, locations 2 and 4 contain the the sum of the final
+two elements in their prefix. If we do this for numbers that aren’t
+powers of two then our diagram looks like this
+   </p>
+   <p>
+    <img src="/blog/images/prefix-divide-conquer-slant.png">
+   </p>
+   <p>
+    Here we can visually see that after our first step, our array
+locations have the sum of up to the final 2 elements of its prefix. If
+we extend this slightly then our diagram looks like this
+   </p>
+   <p>
+    <img src="/blog/images/prefix-divide-conquer-full.png">
+   </p>
+   <p>
+    Here we’re now incremently calculating the prefix sum for each of our
+array locations using work from the previous step and this is fairly
+similar to the idea that’s behind how <a href="https://en.wikipedia.org/wiki/Fenwick_tree">Fenwick trees</a>
+work.
+   </p>
+   <p>
+    We can turn this idea into a parallel algorithm. I’m writing this
+using MPI in Julia since Julia is a language thatI’ve been wanting to
+learn and do a bit more work with for a while.o
+   </p>
+   <div class="sourceCode" id="cb4">
+    <pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">MPI</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>MPI.<span class="fu">Init</span>()</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>comm <span class="op">=</span> MPI.COMM_WORLD</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>rank <span class="op">=</span> MPI.<span class="fu">Comm_rank</span>(comm)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>size <span class="op">=</span> MPI.<span class="fu">Comm_size</span>(comm)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">prefix</span>(X <span class="op">::</span><span class="dt"> AbstractArray{Int8, N}</span>) <span class="op">::</span><span class="dt"> AbstractArray{Int8, N} </span><span class="kw">where</span> N</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> <span class="fu">copy</span>(X)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    broadcast_view <span class="op">=</span> <span class="fu">similar</span>(X)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="fu">Int64</span>(<span class="fu">length</span>(result))</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    total_substeps <span class="op">=</span> n</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    max_subarray_size <span class="op">=</span> <span class="fl">1</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    lookbehind <span class="op">=</span> <span class="fl">1</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> step <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu">Int64</span>(<span class="fu">ceil</span>(<span class="fu">log2</span>(n)))</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        MPI.<span class="fu">Bcast!</span>(result, <span class="fl">0</span>, comm)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        workspace <span class="op">=</span> <span class="fu">copy</span>(result)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        smallest_valid_index <span class="op">=</span> lookbehind <span class="op">+</span> <span class="fl">1</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        total_subtasks <span class="op">=</span> n <span class="op">-</span> smallest_valid_index <span class="op">+</span> <span class="fl">1</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        active_cores <span class="op">=</span> <span class="fu">min</span>(size, total_subtasks)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>        core_is_active <span class="op">=</span> rank <span class="op">&lt;</span> active_cores</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        subtasks_per_rank <span class="op">=</span> total_subtasks <span class="op">÷</span> active_cores</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> core_is_active</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> rank <span class="op">==</span> active_cores <span class="op">-</span> <span class="fl">1</span> </span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>                my_subtasks <span class="op">=</span> subtasks_per_rank <span class="op">+</span> (total_subtasks <span class="op">%</span> active_cores)</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>                my_subtasks <span class="op">=</span> subtasks_per_rank</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>            <span class="cf">end</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>            start_location <span class="op">=</span> smallest_valid_index <span class="op">+</span> subtasks_per_rank <span class="op">*</span> rank</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>            end_location <span class="op">=</span> start_location <span class="op">+</span> my_subtasks <span class="op">-</span> <span class="fl">1</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> subtask_delta <span class="kw">in</span> <span class="fl">0</span> <span class="op">:</span> my_subtasks <span class="op">-</span> <span class="fl">1</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>                location <span class="op">=</span> start_location <span class="op">+</span> subtask_delta</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>                workspace[location] <span class="op">+=</span> result[location <span class="op">-</span> lookbehind]</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>            <span class="cf">end</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> unit <span class="kw">in</span> <span class="fl">0</span> <span class="op">:</span> active_cores <span class="op">-</span> <span class="fl">1</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> unit <span class="op">==</span> active_cores <span class="op">-</span> <span class="fl">1</span> </span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>                unit_subtasks <span class="op">=</span> subtasks_per_rank <span class="op">+</span> (total_subtasks <span class="op">%</span> active_cores)</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>                unit_subtasks <span class="op">=</span> subtasks_per_rank</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>            <span class="cf">end</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>            start_location <span class="op">=</span> smallest_valid_index <span class="op">+</span> subtasks_per_rank <span class="op">*</span> unit</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>            end_location <span class="op">=</span> start_location <span class="op">+</span> unit_subtasks <span class="op">-</span> <span class="fl">1</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>            broadcast_view[start_location <span class="op">:</span> end_location] <span class="op">=</span> workspace[start_location <span class="op">:</span> end_location]</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>            MPI.<span class="fu">Bcast!</span>(broadcast_view, unit, comm)</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>            result[start_location <span class="op">:</span> end_location] <span class="op">=</span> broadcast_view[start_location <span class="op">:</span> end_location]</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>        MPI.<span class="fu">Barrier</span>(comm)</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>        lookbehind <span class="op">*=</span> <span class="fl">2</span></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>array <span class="op">=</span> <span class="dt">Int8</span>[<span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">5</span>]</span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">prefix</span>(array)</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> rank <span class="op">==</span> <span class="fl">0</span></span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>    <span class="fu">println</span>(result)</span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre>
+   </div>
+   <p>
+    Prefix sums are also just a special type of <a href="https://en.wikipedia.org/wiki/Recurrence_relation">recurrence
+relations</a>. Recurrence come up loads in applied mathematics such as
+<a href="https://en.wikipedia.org/wiki/Autoregressive_model">AR
+models</a> in econometrics.
+   </p>
+   <p>
+    In general terms, a linear first order recurrence relations \(x_t\)
+takes the following form
+   </p>
+   <p>
+    \[ x_t = a_tx_{t - 1} + d_t \]
+   </p>
+   <p>
+    for coefficients \(a_t\) and data \(d_t\).
+   </p>
+   <p>
+    So really our prefix sum is just a first-order linear recurrence
+relation where all \(a_t\) are set to one.
+   </p>
+   <p>
+    Similar to prefix sums, it’s not immediately obvious how we can
+parallelise calculating the terms of our recurrence relation. However,
+we can rewrite our equation like this
+   </p>
+   <p>
+    \[ \begin{align*} x_t &amp;= a_tx_{t - 1} + d_t \\ &amp;= a_t(a_{t-1}
+x_{t - 2} + d_{t - 1}) + d_t \\ &amp;= a_ta_{t - 1}x_{t - 2} + a_{t -
+1}d_{t - 1} + d_t \\ \end{align*} \]
+   </p>
+   <p>
+    At a first glance this does’t seem to help us since in this form
+\(x_t\) still depends on \(x_{t - 2}\), a previous value from the
+sequence. However we can notice that \(t - 2\) has the same parity as
+\(t\) so we can have two compute units computing different partitions of
+our result: one will operate on data with odd indices and one will
+operate on data with even indices and this generalises for the case
+where we have more than 2 processors.
+   </p>
+   <hr>
+   <p>
+    Julia was pretty fun to use, the setup and installation was simple
+and it was very easy to install the MPI bindings. I definitely want to
+try and use it a bit more in the future.
+   </p>
+   <h1>
+    References
+   </h1>
+   <p>
+    [1]: Hockney, Roger W., and Chris R. Jesshope. Parallel Computers 2:
+architecture, programming and algorithms. CRC Press, 2019.
+   </p>
+  </main>
+ </body>
+</html>
