@@ -73,8 +73,8 @@ sequentially applying its definition
     This is an instance of what’s called a “scan” or reduction operation.
 In Julia I could write this iteratively like this
    </p>
-   <pre><code>function prefix(X :: AbstractArray{Int8, N}) :: AbstractArray{Int8, N} where N
-    result = similar(X, Int8)
+   <pre><code>function prefix(X :: AbstractArray{Int64, N}) :: AbstractArray{Int64, N} where N
+    result = similar(X, Int64)
     result[1] = X[1]
     for index in 2:length(X)
         result[index] = X[index] + result[index - 1]
@@ -140,7 +140,7 @@ work.
    </p>
    <p>
     We can turn this idea into a parallel algorithm. I’m writing this
-using MPI in Julia since Julia is a language thatI’ve been wanting to
+using MPI in Julia since Julia is a language that I’ve been wanting to
 learn and do a bit more work with for a while
    </p>
    <div class="sourceCode" id="cb4">
@@ -151,7 +151,7 @@ learn and do a bit more work with for a while
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>rank <span class="op">=</span> MPI.<span class="fu">Comm_rank</span>(comm)</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>size <span class="op">=</span> MPI.<span class="fu">Comm_size</span>(comm)</span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">prefix</span>(X <span class="op">::</span><span class="dt"> AbstractArray{Int8, N}</span>) <span class="op">::</span><span class="dt"> AbstractArray{Int8, N} </span><span class="kw">where</span> N</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">prefix</span>(X <span class="op">::</span><span class="dt"> AbstractArray{Int64, N}</span>) <span class="op">::</span><span class="dt"> AbstractArray{Int64, N} </span><span class="kw">where</span> N</span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> <span class="fu">copy</span>(X)</span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    broadcast_view <span class="op">=</span> <span class="fu">similar</span>(X)</span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
@@ -203,7 +203,7 @@ learn and do a bit more work with for a while
 <span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result</span>
 <span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
 <span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>array <span class="op">=</span> <span class="dt">Int8</span>[<span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">5</span>]</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>array <span class="op">=</span> <span class="dt">Int64</span>[<span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">5</span>]</span>
 <span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">prefix</span>(array)</span>
 <span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> rank <span class="op">==</span> <span class="fl">0</span></span>
 <span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>    <span class="fu">println</span>(result)</span>
@@ -211,9 +211,9 @@ learn and do a bit more work with for a while
    </div>
    <p>
     Prefix sums are also just a special type of <a href="https://en.wikipedia.org/wiki/Recurrence_relation">recurrence
-relations</a>. Recurrence come up loads in applied mathematics such as
-<a href="https://en.wikipedia.org/wiki/Autoregressive_model">AR
-models</a> in econometrics.
+relation</a>. Recurrence relations come up loads in applied maths: for
+example, <a href="https://en.wikipedia.org/wiki/Autoregressive_model">AR
+models</a> from econometrics.
    </p>
    <p>
     In general terms, a linear first order recurrence relations \(x_t\)
