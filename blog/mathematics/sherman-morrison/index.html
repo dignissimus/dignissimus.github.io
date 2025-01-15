@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    The Sherman-Morrison Formula
+   </h1>
+   <p>
+    <em>15 January 2024</em>
+   </p>
+   <p>
+    Here I derive a method to efficiently fit a rolling-window
+regression, I want to find time to implement it in Julia soon
+   </p>
+   <hr>
+   <p>
+    We can write a lot of constructs in machine learning and statistics
+in terms of an expression involving <a href="https://en.wikipedia.org/wiki/Invertible_matrix">matrix
+inverses</a>. The <a href="https://en.wikipedia.org/wiki/Sherman%E2%80%93Morrison_formula">Sherman-Morrison
+identity</a> allows us to efficiently re-compute the inverse of a matrix
+after updating some of its values.
+   </p>
+   <p>
+    For example, the solution to the OLS problem is
+\((X^{\top}X)^{-1}X^{\top}y\) and computing this consists of matrix
+multiplications and finding the matrix inverse. Practically speaking,
+multiplying and inverting square matrices typically takes us on the
+order of \(n^3\) arithmetic operations and multiplying an \(m \times n\)
+matrix with an \(n \times p\) matrix will typically take us \(O(mnp +
+mp^2)\) operations.
+   </p>
+   <p>
+    If we wanted to fit a simple linear regression model with one
+response variable then our \(X\) would be a \(n \times 2\) matrix where
+\(n\) is our number of observations: the first column of \(X\) would
+contain our observations and the second column of \(X\) would be all
+ones to allow us to fit a model with an intercept. Our \(y\) would be a
+\(n \times 1\) matrix that contains our observations of the response
+variable.
+   </p>
+   <p>
+    If we wanted to find the OLS estimate for \(\hat{y} = \beta X^\top\)
+then solving for \(\beta = (X^{\top}X)^{-1}X^{\top}y\) would take on the
+order of \(n\) arithmetic operations for this simple linear regression
+example. But what if we had time-series data and wanted to fit a rolling
+regression with a window size of \(r\)?
+   </p>
+   <p>
+    If we do this naively by fitting \(n - r\) regressions where \(r \ll
+n\) by finding the OLS estimate for every single window then this will
+take us on the order of \(O(nr)\) arithmetic operations.
+   </p>
+   <p>
+    However we can notice that our design matrix across adjacent windows
+will only differ by one row which is a “rank-1” update that the
+Sherman-Morrison formula is able to handle.
+   </p>
+   <p>
+    If we have two vectors \(u, v\) and an invertible matrix \(A\) then
+we can calculate the inverse of the matrix \(A + u \otimes v)^{-1}\) as
+follows
+   </p>
+   <p>
+    \[ \begin{align*} (A + u \otimes v)^{-1} &amp;= \left( A\left(I +
+A^{-1}u \otimes v\right) \right)^{-1} \\ &amp;= \left(I + A^{-1}u
+\otimes v \right)^{-1}A^{-1} \end{align*} \]
+   </p>
+   <p>
+    My textbook introduces a funky trick which we can use to simplify
+this. The power series expansion for \(f(x) = \frac{1}{1 + x}\) is
+   </p>
+   <p>
+    \[ \begin{align*} f(x) &amp;= (1 + x)^{-1} \\ &amp;= 1 - x + x^2 -
+x^3 + \dots \\ &amp;= \sum_{i = 0}^{\infty} (-1)^ix^i \end{align*}
+\]
+   </p>
+   <p>
+    Extending this to matrices matrices and we have
+   </p>
+   <p>
+    \[ \begin{align*} (I + X)^{-1} &amp;= I - X + X^2 - X^3 + \dots \\
+&amp;= \sum_{i = 0}^{\infty} (-1)^iX^i \end{align*} \]
+   </p>
+   <p>
+    My textbook didn’t actually justify the validity of this expansion or
+even state that it used this expansion for that matter but multiplying
+the LHS and RHS by \(1 + X\) makes it seem reasonable. Continuing with
+this we get
+   </p>
+   <p>
+    \[ \begin{align*} (A + u \otimes v)^{-1} &amp;= \left(I + A^{-1}u
+\otimes v \right)^{-1}A^{-1} \\ &amp;= \left(\sum_{i=0}^\infty
+\left(-1\right)^i \left(A^{-1}u \otimes v\right)^i\right) A^{-1} \\
+&amp;= \left(I + \sum_{i=1}^\infty \left(-1\right)^i \left(A^{-1}u
+\otimes v\right)^i\right) A^{-1} \\ &amp;= A^{-1} +
+\left(\sum_{i=1}^\infty \left(-1\right)^i \left(A^{-1}u \otimes
+v\right)^i\right) A^{-1} \\ &amp;= A^{-1} - A^{-1}u \otimes v + A^{-1}u
+\otimes v A^{-1}u \otimes v - \dots \\ &amp;= A^{-1} - A^{-1}u \otimes v
+A^{-1} A^{-1} \left(1 - \left(1 + v A^{-1}u\right) + \left(1 + v
+A^{-1}u\right)^2 - \dots\right) \\ &amp;= A^{-1} - \frac{A^{-1}u\otimes
+vA^{-1}}{1 + v A^{-1}u} \end{align*} \]
+   </p>
+   <p>
+    Which gives us the Sherman-Morrison formula and a way to find the new
+adjusted matrix in terms of the inverse of the matrix.
+   </p>
+   <p>
+    This representation of the inverse contains many terms however it
+doesn’t involve an explicit calculation of any matrix inverse.
+Additionally since \(u\) and \(v\) are vectors then if \(A\) is \(n
+\times n\) we only need of the order of \(n^2\) arithemtic operations to
+compute this entire expression which is a speed up over the \(O(n^3)\)
+operations we require to directly compute the inverse of the updated
+matrix.
+   </p>
+   <p>
+    In the context of our rolling regression, we’d like to update just
+one element of our matrix \(X \rightarrow X’\), lets call this element
+\( X_{i’, 1} \rightarrow X’_{i’, 1} \).
+   </p>
+   <p>
+    An element in \(X’^\top X’\) has the following form
+   </p>
+   <p>
+    \[ (X’^\top X’)_{i, j} = \sum_{k=1} X’_{k, i}X’_{k, j} \]
+   </p>
+   <p>
+    And by inspecting this, we can tell that only the first row and
+column will change. Our first row now looks like
+   </p>
+   <p>
+    \[ \begin{align*} (X’^\top X’)_{1, j} &amp;= \sum_{k=1} X’_{k,
+1}X’_{k, j} \\ (X’^\top X’)_{1, j} &amp;= X’_{i’, 1}X’_{i’, j} + \sum_{k
+\neq i’} X’_{k, 1}X’_{k, j} \end{align*} \]
+   </p>
+   <p>
+    Our first column now looks like
+   </p>
+   <p>
+    \[ \begin{align*} (X’^\top X’)_{i, 1} &amp;= \sum_{k=1} X’_{k,
+i}X’_{k, 1} \\ (X’^\top X’)_{i, 1} &amp;= X’_{i’, i}X’_{i’, 1} + \sum_{k
+\neq i’} X’_{k, i}X’_{k, 1} \\ \end{align*} \]
+   </p>
+   <p>
+    Looking at the first row again, if \(X’_{i’, 1} = X_{i’, 1} + d\)
+then when \(j \neq 1 \) we have the following expression for the
+elements in the first row of \(X’^\top X\)
+   </p>
+   <p>
+    \[ \begin{align*} (X’^\top X’)_{1, j} &amp;= X’_{i’, 1}X’_{i’, j} +
+\sum_{k \neq i’} X’_{k, 1}X’_{k, j} \\ &amp;= (X_{i’, 1} + d) X_{i’, j}
++ \sum_{k \neq i’} X_{k, 1}X_{k, j} \\ &amp;= X_{i’, 1} X_{i’, j} + d
+X_{i’, j} + \sum_{k \neq i’} X_{k, 1}X_{k, j} \\ &amp;= d X_{i’, j} +
+\sum_{k = 1} X_{k, 1}X_{k, j} \\ &amp;= d X_{i’, j} + (X^\top X)_{1, j}
+\end{align*} \]
+   </p>
+   <p>
+    When \(j = 1\) we get
+   </p>
+   <p>
+    \[ \begin{align*} (X’^\top X’)_{1, j} &amp;= X’_{i’, 1}X’_{i’, 1} +
+\sum_{k \neq i’} X’_{k, 1}X’_{k, 1} \\ &amp;= (X_{i’, 1} + d) (X_{i’, 1}
++ d) + \sum_{k \neq i’} X_{k, 1}X_{k, 1} \\ &amp;= X_{i’, 1}X_{i’, 1} +
+2dX_{i’, 1} + d^2 + \sum_{k \neq i’} X_{k, 1}X_{k, 1} \\ &amp;= 2dX_{i’,
+1} + d^2 + \sum_{k = 1} X_{k, 1}X_{k, 1} \\ &amp;= 2dX_{i’, 1} + d^2 +
+(X^\top X)_{1, j} \end{align*} \]
+   </p>
+   <p>
+    The algebra for the first column is exactly the same and we can use
+the fact that \(X^\top X\) is symmetric to say that it has the same
+values as the first row.
+   </p>
+   <p>
+    Typing up the algebra is getting a bit boring now but on paper we can
+represent this as the sum of two outer products \(u_1 \otimes v_1 + u_2
+\otimes v_2\): one to change the first row and one to change the first
+column. This means that we can use the Sherman-Morrison formula to find
+the new inverse of \(X’^{\top} X\) and the complexity of doing this is
+now \(O(n^2)\) which consists of two Sherman-Morrison updates instead of
+\(O(n^3)\) matrix multiplications and inverse computation.
+   </p>
+   <p>
+    We can find \(X^\top y\) pretty easily too since if \(X’^\top =
+X^\top + B\) and \(y’ = y + z\) we have the property that \((X^\top +
+B)(y + z) = X^\top y + (X^\top z + By + Bz)\) and since our updates
+\(B\) and \(z\) are sparse this is fast to compute and overall our
+\(O(nr)\) from earlier now becomes \(O(n)\) which is pretty awesome.
+   </p>
+   <p>
+    Using the same method for a rolling multiple-regression model with
+\(r\) observations in our window, \(k\) explanatory variables and \(n\)
+observations in total then the complexity of fitting our model goes from
+\(O( nk^2r )\) to \(O(nk^3)\) which is benefitial as we typically have
+way more observations than we have features.
+   </p>
+   <hr>
+   <p>
+    My textbook provided the Sherman-Morrison formula without context so
+it was pretty cool to find a way to apply it to something that I find
+interesting. I’m fairly excited to write the code for this and see it
+working.
+   </p>
+   <h1>
+    References
+   </h1>
+   <p>
+    [1]: Press, William H. Numerical recipes 3rd edition: The art of
+scientific computing. Cambridge university press, 2007.
+   </p>
+  </main>
+ </body>
+</html>
