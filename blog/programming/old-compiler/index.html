@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Note to self: Don’t use a compiler from the Mesozoic era
+   </h1>
+   <p>
+    <em>updating my compiler is a suprisingly effective debugging
+strategy</em> <strong>18 February 2025</strong>
+   </p>
+   <hr>
+   <p>
+    Earlier this year I was writing code to run on one of my university’s
+supercomputers and to make things a bit more convenient for myself I was
+developing locally on my laptop and zapping my source changes to the
+cluster by working in a private git repository hosted on GitHub. Again
+for convenience I compiled my code locally on my laptop and did small
+test runs so I can analyse performance before putting them on the
+supercomputer however I noticed that a specific loop I wrote wasn’t
+being vectorised even though I knew the supercomputer used AMD EPYC 7702
+CPUs which I triple checked supports <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions#Advanced_Vector_Extensions_2">AVX2
+instructions</a> so I was expecting to see instructions using the 256
+bit YMM registers as the compiler emitted on my own computer.
+   </p>
+   <p>
+    I was very lucky I was feeling lazy and decided to try a more recent
+compiler version because that <em>just worked</em>. Fast forwarding GCC
+3 years from 2018 to 2021 fixed my issue and the compiler vectorised my
+code as I expected.
+   </p>
+   <p>
+    A bit more recently I had something very similar: I was having a go
+at compiling
+[Lean4](https://en.wikipedia.org/wiki/Lean_(proof_assistant%29) for <a href="WebAssembly">WebAssembly</a> and, since I don’t like waiting for
+my code to compile, I had the terrific idea of compiling everything
+using my university’s supercomputer. I saw a weird error message
+complaining about the use of <code>va_arg</code> which I didn’t have the
+patience to read. I updated the compiler version and lo-and-behold
+things started working again. More precisely I ran into <a href="https://github.com/libuv/help/issues/128">another issue</a> but I
+fixed my original issue and I was happy.
+   </p>
+   <p>
+    So yea, update your compiler.
+   </p>
+  </main>
+ </body>
+</html>
