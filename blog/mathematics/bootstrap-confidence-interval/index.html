@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/lean.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Constructing a bootstrap confidence interval in Julia
+   </h1>
+   <p>
+    <em>1 March 2025</em>
+   </p>
+   <hr>
+   <p>
+    I was reading <a href="https://www.countbayesie.com/blog/2021/4/27/technically-wrong-when-bayesian-and-frequentist-methods-differ">a
+blog post</a> that gave an example of where the frequentist approach
+differs from the Bayesian approach.
+   </p>
+   <p>
+    The post presents the example of drawing a sample of nine data points
+from a <a href="https://en.wikipedia.org/wiki/Bernoulli_distribution">Bernoulli
+distribution</a> and we want to estimate the parameter \(p\) which
+represent the probability of seeing a success. Say we see one success
+and eight failures, our <a href="https://en.wikipedia.org/wiki/Maximum_likelihood_estimation">maximum
+likelihood estimate</a> for \(p\) is just the proportion of success
+cases we see in our sample and here that is \(\hat{p} = \frac{1}{1 + 8}
+= \frac{1}{9}\).
+   </p>
+   <p>
+    Naturally, we may want to add a <a href="https://en.wikipedia.org/wiki/Confidence_interval">confidence
+interval</a> to quantify our uncertainty about our estimate since
+depending on what values we happened sampled we could have come up with
+a value for \(\hat p\) that’s slightly bigger or smaller.
+   </p>
+   <p>
+    A natural first step is to estimate the <a href="https://en.wikipedia.org/wiki/Standard_error">standard error</a>
+of the distribution as we typically do for similar problems which in
+this case we know is \(\hat{\sigma} = \hat{p} (1 - \hat{p})\).
+   </p>
+   <p>
+    The <a href="https://en.wikipedia.org/wiki/Sampling_distribution">sampling
+distribution</a> is the hypothetical distribution that we would see if
+we applied our estimator to randomly generated samples of the same size
+as our observation from the real distribution of our population. The
+blog post then presents the sampling distribution of our parameter
+estimate as \(\mathcal{N}(\hat{p}, \hat{\sigma})\).
+   </p>
+   <p>
+    I wrote some Julia code to visualise it
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Distributions</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Plots</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> <span class="fu">Binomial</span>(<span class="fl">9</span>, <span class="fl">0.11</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>p̂ <span class="op">=</span> <span class="fu">rand</span>(d) <span class="op">/</span> <span class="fl">9</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>σ̂ <span class="op">=</span> p̂ <span class="op">*</span> (<span class="fl">1</span> <span class="op">-</span> p̂)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>p̂_d <span class="op">=</span> <span class="fu">Normal</span>(p̂, σ̂)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>xs <span class="op">=</span> <span class="fu">LinRange</span>(<span class="op">-</span><span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">10_000</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(xs, <span class="fu">pdf</span>(p̂_d, xs), lab<span class="op">=</span><span class="st">"Likelihood"</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>forbidden <span class="op">=</span> <span class="fu">LinRange</span>(<span class="op">-</span><span class="fl">0.5</span>, <span class="fl">0</span>, <span class="fl">10_000</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">plot!</span>(</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  forbidden,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pdf</span>(p̂_d, forbidden),</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  ribbon<span class="op">=</span>(<span class="fu">pdf</span>(p̂_d, forbidden), <span class="fl">0</span>),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  lab<span class="op">=</span><span class="st">"Impossible"</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  ylab<span class="op">=</span><span class="st">"Density"</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  xlab<span class="op">=</span><span class="st">"\$p\$"</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>)</span></code></pre>
+   </div>
+   <p>
+    <img src="/blog/images/bootstrap-ci/impossible-region.png">
+   </p>
+   <p>
+    There is a clear problem here since our distribution for \(\hat{p}\)
+probability contains values which are negative which is impossible for
+\(p\) since it represents a probability. In fact, about 20% of our
+supposed sampling distribution is negative!
+   </p>
+   <p>
+    The mistake here was approximating the sampling distribution of our
+estimate with a normal distribution. Since our sample size is so small
+and \(\hat p\) is so close to 0 this approximation is just
+inaccurate.
+   </p>
+   <p>
+    The blog post doesn’t mention it but we can instead construct the <a href="https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29">bootstrap</a>
+estimate for the confidence interval.
+   </p>
+   <p>
+    Case resampling bootstrap works by constructing a series of bootstrap
+samples by resampling with replacement from our original set of
+observations and approximating the distribution of our estimate using
+the values of our estimator on our bootstrap samples. Here our results
+look far more sensible.
+   </p>
+   <p>
+    In Julia it looks like this
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>bootstrap_samples <span class="op">=</span> <span class="fl">100_000</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> [<span class="fl">1</span>; <span class="fu">zeros</span>(<span class="fl">8</span>)]  <span class="co"># 1 success, 8 failures</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>bootstrap_p̂s <span class="op">=</span> <span class="fu">zeros</span>(<span class="fl">0</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span>bootstrap_samples</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    bootstrap_p̂ <span class="op">=</span> <span class="fu">sum</span>(<span class="fu">rand</span>(data, <span class="fl">9</span>)) <span class="op">/</span> <span class="fl">9</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    bootstrap_p̂s <span class="op">=</span> <span class="fu">append!</span>(bootstrap_p̂s, bootstrap_p̂)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">histogram</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  bootstrap_p̂s,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  normalize<span class="op">=</span><span class="cn">true</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  dpi<span class="op">=</span><span class="fl">1000</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  ylab<span class="op">=</span><span class="st">"Density"</span>,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  xlab<span class="op">=</span><span class="st">"\$</span><span class="sc">\\</span><span class="st">hat p\$"</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  title<span class="op">=</span><span class="st">"Bootstrap distribution"</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  lab<span class="op">=</span><span class="st">"Likelihood"</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>)</span></code></pre>
+   </div>
+   <p>
+    <img src="/blog/images/bootstrap-ci/bootstrap-distribution.png">
+   </p>
+   <p>
+    We can also estimate the 95% confidence interval
+   </p>
+   <div class="sourceCode" id="cb3">
+    <pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sorted_p̂s <span class="op">=</span> <span class="fu">sort</span>(bootstrap_p̂s)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>lower <span class="op">=</span> sorted_p̂s[<span class="fu">Int</span>(<span class="fu">ceil</span>(<span class="fl">0.025</span> <span class="op">*</span> bootstrap_samples))]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>upper <span class="op">=</span> sorted_p̂s[<span class="fu">Int</span>(<span class="fu">ceil</span>(<span class="fl">0.975</span> <span class="op">*</span> bootstrap_samples))]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"95% Bootstrap CI: [</span><span class="sc">$</span>lower<span class="st">, </span><span class="sc">$</span>upper<span class="st">]"</span>)</span></code></pre>
+   </div>
+   <p>
+    Just for funsies we can also get the Bayesian posterior distribution
+given a \(\operatorname{Beta}(1, 1)\) prior which represents an
+indifference between all values of the parameter \(p\). The posterior
+represents our updated beliefs about \(p\) after exposing ourselves the
+data we’ve collected.
+   </p>
+   <div class="sourceCode" id="cb4">
+    <pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>bayesian_posterior <span class="op">=</span> <span class="fu">Beta</span>(<span class="fl">2</span>, <span class="fl">9</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>xs <span class="op">=</span> <span class="fu">LinRange</span>(<span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">10_000</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  xs,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pdf</span>(bayesian_posterior, xs),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  xlab<span class="op">=</span><span class="st">"p"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  ylab<span class="op">=</span><span class="st">"Density"</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  title<span class="op">=</span><span class="st">"Posterior distribution for a \$</span><span class="sc">\\</span><span class="st">operatorname{Beta}(1, 1)\$ prior"</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre>
+   </div>
+   <p>
+    <img src="/blog/images/bootstrap-ci/bayesian-posterior.png">
+   </p>
+   <p>
+    The blog post has a point though, namely that the Bayesian method is
+easier to interpret and get right. In my view, the Bayesian posterior
+has a typically more useful interpretation as our belief for the value
+of the parameter.
+   </p>
+   <p>
+    Our bootstrap sampling distribution allocates substantial probability
+to the case \(\hat{p} = 0\) but we know \(p\) cannot be 0 since in our
+original sample we observed a success. This happens due to the fact that
+that, unlike the bayesian posterior, the frequentist confidence interval
+does not represent our beliefs about the value of the parameter. The
+confidence interval just represents what our parameter estimate could
+have been due to randomness in our sampling procedure and when
+understood this way it’s true that it’s plausible that we could have
+estimated \(p\) as 0 just by chance.
+   </p>
+   <p>
+    Our Bayesian posterior assigns \(p = 0\) a probability density of 0
+since this case is incompatible with our observation of a success and we
+could not rationally believe that \(p = 0\) is possible.
+   </p>
+  </main>
+ </body>
+</html>
