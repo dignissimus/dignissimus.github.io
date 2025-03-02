@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/lean.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/r.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Ridge regression: Handling multicollinearity with a Gaussian
+prior
+   </h1>
+   <p>
+    <em>2 March 2025</em>
+   </p>
+   <hr>
+   <p>
+    I forgot where I first read this but it becomes increasingly hard to
+estimate coefficients for a linear regression as the predictors become
+more correlated.
+   </p>
+   <p>
+    To start with, I’ll sample from multivariate normal distributions
+with varying covariance. They look like this on a graph
+   </p>
+   <p>
+    <img src="/blog/images/ridge/distributions-all.png">
+   </p>
+   <p>
+    The R code for that looks like this
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>plot_dist <span class="ot">&lt;-</span> <span class="cf">function</span> (cov_choice) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  Sigma <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, cov_choice, cov_choice, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">mvrnorm</span>(n, mu, Sigma))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(df) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x=</span>X1, <span class="at">y=</span>X2, <span class="at">colour=</span><span class="fu">factor</span>(X1)), <span class="at">show.legend=</span>F) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="fu">paste</span>(<span class="st">"Covariance ="</span>, cov_choice))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre>
+   </div>
+   <p>
+    Next I can fit a linear model. I define the response variable as \(Y
+= \alpha X_1 + \beta X_2 + \epsilon\) with \(\epsilon \sim
+\mathcal{N}(0, 1)\). R has a built-in function for fitting linear models
+called <code>lm</code> and I use it by writing
+<code>lm(y ~ X1 + X2)</code>. My code now looks like this
+   </p>
+   <pre><code>test_ls &lt;- function (true_alpha, true_beta) {
+  covs_to_use &lt;- c(0.99, 0.999, 0.9999, 0.99999, 0.999999)
+  covs &lt;- c()
+  alphas &lt;- c()
+  betas &lt;- c()
+  attempts &lt;- c()
+  for (cov_value in covs_to_use) {
+    for (i in 1:100) {
+      n &lt;- 1000
+      mu &lt;- c(0, 0)
+      Sigma &lt;- matrix(c(1, cov_value, cov_value, 1), 2, 2)
+      df &lt;- data.frame(mvrnorm(n, mu, Sigma))
+      df$y = true_alpha * df$X1 + true_beta * df$X2 + rnorm(n, 0, 0.1)
+      coefficients &lt;- coef(lm(y ~ X1 + X2, df))
+      alpha &lt;- coefficients[2]
+      beta &lt;- coefficients[3]
+      covs &lt;- append(covs, cov_value)
+      alphas &lt;- append(alphas, alpha)
+      betas &lt;- append(betas, beta)
+      attempts &lt;- append(attempts, i)
+    }
+  }
+  data.frame(covariance=covs, alpha=alphas, beta=betas, attempt=attempts)
+}</code></pre>
+   <p>
+    If I set \(\alpha = 0\) and \(\beta = 0\) then \(y\) is just a
+normally distributed variable that is completely independent of \(X_1\)
+and \(X_2\). Here are what the least squares estimates for \(\alpha\)
+look like
+   </p>
+   <p>
+    <img src="/blog/images/ridge/coefficient-no-relationship-least-squares.png">
+   </p>
+   <p>
+    Our estimates for \(\alpha\) worsen as we increase the covariance:
+there is no relationship between \(y\) and \(X\) but some of our
+estimates for \(\alpha\) are larger than 4!
+   </p>
+   <p>
+    Our model is still able to predict well but when our are more
+correlated it’s difficult to work out how each of our predictors
+contribute to the final result. If we plot our joint estimates for
+\(\alpha\) and \(\beta\) on a graph then we consistently get \(\alpha +
+\beta = 0\) no matter what the covariance is.
+   </p>
+   <p>
+    <img src="/blog/images/ridge/coefficient-no-relationship-least-squares-ab.png">
+   </p>
+   <p>
+    So our model is able to identify \(\alpha + \beta\) but not either of
+\(\alpha\) and \(\beta\) individually.
+   </p>
+   <p>
+    We can remedy this by adding a Bayesian prior to our model weights.
+If we place a prior distribution on our weights then instead of taking
+the maximum likelihood estimate we can instead find the <a href="https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation">maximum
+aposteriori estimate</a> or MAP estimate. The MAP estimate chooses the
+parameters that maximise our posterior likelihood after observing the
+data.
+   </p>
+   <p>
+    If we use a prior of \( w \sim \mathcal{N}( \mathbf{0}, \lambda^{-1}
+I)\) then after observing data with design matrix \(X\) then we get a
+MAP estimate of \( (X^\top X + \lambda I)^{-1}X^\top y \). Finding this
+value is equivalnt to minimising the least-sqaures error with an <a href="https://en.wikipedia.org/wiki/Lp_space">\(\ell_2\)-penalty</a>
+which is also known as <a href="https://en.wikipedia.org/wiki/Ridge_regression">ridge
+regression</a>.
+   </p>
+   <p>
+    The estimation code now looks like this
+   </p>
+   <div class="sourceCode" id="cb3">
+    <pre class="sourceCode R"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>w <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(X) <span class="sc">%*%</span> X <span class="sc">+</span> lambda <span class="sc">*</span> <span class="fu">diag</span>(<span class="dv">2</span>), <span class="fu">t</span>(X) <span class="sc">%*%</span> df<span class="sc">$</span>y)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> w[<span class="dv">1</span>]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> w[<span class="dv">2</span>]</span></code></pre>
+   </div>
+   <p>
+    And our estimated coefficients look like this
+   </p>
+   <p>
+    <img src="/blog/images/ridge/coefficient-no-relationship-ridge.png">
+   </p>
+   <p>
+    This is much better. We don’t have any wild claims about the
+predictive effect of our variables and our largest estimate is 0.05.
+Using a prior gives us the benefit that we use prior knowledge to
+improve the accuracy of our model. Here we stated that we expected our
+coefficients to be around 0 and that’s what we see in our MAP.
+   </p>
+   <p>
+    We can also see what happens when our prior is centred around 0 but
+the true value of our parameters are non-zero. Here are the plots of the
+regression results when \(\alpha = 0.2\) and \(\beta = 0.8\)
+   </p>
+   <p>
+    <img src="/blog/images/ridge/coefficient-some-relationship-ridge-lambda-one.png">
+   </p>
+   <p>
+    For datasets with lower multicollinearity we’re able to adjust our
+belief closer to the true value of \(\alpha = 0.2\) but when covariance
+is high, the only thing we know is that \(\alpha + \beta = 1\) and since
+we applied our zero-centred prior to both \(\alpha\) and \(\beta\) our
+model knows that \(\alpha\) and \(\beta\) aren’t 0 and sees it most
+likely that \(\alpha\) and \(\beta\) are both 0.5.
+   </p>
+   <p>
+    The MAP for a prior of \( \mathcal{N}(\mathbf{\mu}, \lambda^{-1} I)
+\) is \( (X^\top X + \lambda I)^{-1}(X^\top y + \mu) \). Using a prior
+centred around \(\alpha = 0.2\) gives us the following result
+   </p>
+   <p>
+    <img src="/blog/images/ridge/ridge-nonzero.png">
+   </p>
+   <p>
+    Because our highly correlated predictors are such weak evidence for
+any value, our MAP stays close to our prior belief of 0.2.
+   </p>
+   <p>
+    It would be “more Bayesian” to skip the MAP point estimate and just
+calculate the posterior distribution using MCMC but I would prefer to do
+this with <a href="https://www.pymc.io/welcome.html">PyMC</a> in Python
+rather than R.
+   </p>
+   <p>
+    That’s for another day!
+   </p>
+   <h1>
+    References
+   </h1>
+   <p>
+    [1]: Murphy, Kevin P. Probabilistic machine learning: an
+introduction. MIT press, 2022.
+   </p>
+  </main>
+ </body>
+</html>
