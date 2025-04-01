@@ -20,6 +20,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
   <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/lean.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/r.min.js"></script>
   <script>
    hljs.highlightAll();
   </script>
@@ -95,9 +96,9 @@ estimate as \(\mathcal{N}(\hat{p}, \hat{\sigma})\).
    </p>
    <p>
     There is a clear problem here since our distribution for \(\hat{p}\)
-probability contains values which are negative which is impossible for
-\(p\) since it represents a probability. In fact, about 20% of our
-supposed sampling distribution is negative!
+contains values which are negative which is impossible for \(p\) since
+it represents a probability. In fact, about 20% of our supposed sampling
+distribution is negative!
    </p>
    <p>
     The mistake here was approximating the sampling distribution of our
@@ -153,8 +154,8 @@ look far more sensible.
     Just for funsies we can also get the Bayesian posterior distribution
 given a \(\operatorname{Beta}(1, 1)\) prior which represents an
 indifference between all values of the parameter \(p\). The posterior
-represents our updated beliefs about \(p\) after exposing ourselves the
-data we’ve collected.
+represents our updated beliefs about \(p\) after exposing ourselves to
+the data we’ve collected.
    </p>
    <div class="sourceCode" id="cb4">
     <pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>bayesian_posterior <span class="op">=</span> <span class="fu">Beta</span>(<span class="fl">2</span>, <span class="fl">9</span>)</span>

@@ -20,6 +20,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
   <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/lean.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/r.min.js"></script>
   <script>
    hljs.highlightAll();
   </script>
@@ -506,9 +507,9 @@ this, we get
    </p>
    <p>
     \[ \begin{align*} dS_t &amp;= \left( \mu e^{r_t} + \frac{\sigma^2}{2}
-e^{r_t} \right) dt + \sigma e^{r_t}dW_t \\ dS_t &amp;= \mu S_t
-\frac{\sigma^2}{2}S_t + S_tdW_t \\ dS_t &amp;= S_t \left( \mu +
-\frac{\sigma^2}{2} \right)dt + S_TdW_t \end{align*} \]
+e^{r_t} \right) dt + \sigma e^{r_t}dW_t \\ dS_t &amp;= (\mu S_t +
+\frac{\sigma^2}{2}S_t)dt + S_tdW_t \\ dS_t &amp;= S_t \left( \mu +
+\frac{\sigma^2}{2} \right)dt + \sigma S_TdW_t \end{align*} \]
    </p>
    <p>
     This describes <a href="https://en.wikipedia.org/wiki/Geometric_Brownian_motion">Geometric
@@ -636,7 +637,7 @@ contains
     function rpoisson(lambda)
         real(8) :: rpoisson
         real(8), intent(in) :: lambda
-        real(8) :: exp_lambda, uniform_product
+        real(8) :: threshold, uniform_product
         threshold = exp(-lambda)
         rpoisson = -1
         uniform_product = 1
