@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction to Speech Processing</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+    body, html {
+      font-family: Raleway, Roboto, san-serif;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      background-color: #F2DCBF;
+      color: #222222;
+    }
+
+    section.title-page {
+            text-align: left;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 3rem;
+    }
+    
+    section {
+        height: 100vh;
+      padding: 2rem;
+      scroll-snap-align: start;
+      transition: background 0.5s;
+      background-color: #F2DCBF;
+    }
+
+    section div {
+        width: 100%;
+    }
+
+    .subtitle {
+        color: #444444;
+    }
+
+    .small {
+        font-size: 2rem;
+    }
+
+    .margin-top {
+        margin-top: 1rem;
+    }
+
+    h1 {
+        margin-top: 1rem;
+    }
+    
+    /*.section1 { background: #f87171; }
+    .section2 { background: #60a5fa; }
+    .section3 { background: #34d399; }
+    .section4 { background: #fbbf24; }*/
+  </style>
+  <script src="essential_audio.js"></script>
+<link rel="stylesheet" href="essential_audio.css"></link>
+</head>
+<body>
+
+  <section class="title-page">
+      <div>Interactive Introduction to Speech Processing</div>
+      <div class="subtitle small margin-top">Sam Ezeh</div>
+  </section>
+  <section class="title-page">What is sound?</section>
+  <section class="section1">
+      <h1>What is sound?</h1>
+      <p>Sound is a vibration that travels through the air as waves of pressure caused by some vibrating object.</p>
+      <p>These waves create pockets of high and low pressure that move through the air in every direction.</p>
+      <p>When these pressure waves reach our ears, they cause our eardrums to vibrate in response.</p>
+      <p>Our brains then interpret these vibrations as sound, allowing us to hear.</p>
+      <p>Below is a recording of a man saying "hello" and a graph of how the air pressure changes over time.</p>
+      <p>Tap the graph to listen to the man speak.</p>
+      <br>
+      <div id="hello-waveform"></div>
+        <script type="module">
+            import WaveSurfer from 'https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.esm.js'
+
+            const wavesurfer = WaveSurfer.create({
+              container: '#hello-waveform',
+              waveColor: '#4F4A85',
+              progressColor: '#383351',
+              url: 'hello.ogg',
+            })
+
+            wavesurfer.on('interaction', () => {
+              wavesurfer.play()
+            })
+        </script>
+    </section>
+  <section class="title-page">How do we perceive sound?</section>
+  <section>
+      <h1>How do we perceive sound?</h1>
+      <p>When we use it technially, the word "frequency" refers to how often something repeats in some amount of time.</p>
+      <p>Simply put, the faster something repeats the higher it sounds to us.</p>
+      <p>Tap the button below to hear something that vibrates about 130 times a second or at a <i>frequency</i> of <i>130 Hertz</i>.</p>
+      <br>
+        <div class="essential_audio" data-url="C2.ogg"></div>
+      <br>
+      <p>Once the sound enters our ears, our eardrums then pass the vibration on to another region of our ear called the "cochlea".</p>
+      <p>The cochlea is filled with tiny hairs that each start to wiggle in response to different frequencies and our brain then decodes these wiggles into sound.</p>
+  </section>
+
+<style>
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    input[type="checkbox"] {
+      accent-color: #ff69b4;
+      transform: scale(1.3);
+    }
+
+    svg {
+      width: 100%;
+      max-width: 600px;
+      height: 200px;
+      border-radius: 1rem;
+      background: #fff0f5;
+      box-shadow: 0 0 10px rgba(255, 105, 180, 0.2);
+    }
+
+    path {
+      transition: stroke 0.3s ease;
+    }
+button {
+      background: #ff69b4;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #ff85c1;
+    }
+  </style>
+  <section>
+      <h1>How do we perceive sound?</h1>
+      <p>The sound from earlier is called a sine wave and we can combine different sine waves to make new sounds</p>
+
+      <div class="controls">
+        <label>
+          <input type="checkbox" id="f1" checked>
+          130Hz
+        </label>
+        <label>
+          <input type="checkbox" id="f2" checked>
+          175Hz
+        </label>
+      </div>
+  <svg id="waveform" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+    <path fill="none" stroke="#ff69b4" stroke-width="2" />
+  </svg>
+<button id="play">Play Tone</button>
+
+
+  <script>
+    const svg = document.getElementById("waveform");
+    const path = svg.querySelector("path");
+    const f1Checkbox = document.getElementById("f1");
+    const f2Checkbox = document.getElementById("f2");
+    const playButton = document.getElementById("play");
+
+    const width = 600;
+    const height = 200;
+    const midY = height / 2;
+    const pointCount = width + 1;
+    let currentY = new Array(pointCount).fill(midY);
+
+    function generateYValues(f1, f2) {
+      const ys = [];
+      for (let x = 0; x <= width; x++) {
+        const t = x / width * 2 * Math.PI;
+        const y = Math.sin(f1 * t) * 40 + Math.sin(f2 * t) * 40;
+        ys.push(midY - y);
+      }
+      return ys;
+    }
+
+    function drawWave(ys) {
+      const points = ys.map((y, x) => `${x},${y}`);
+      const d = "M" + points.join(" L");
+      path.setAttribute("d", d);
+    }
+
+    function animateWave(toY) {
+      const duration = 400;
+      const frameRate = 60;
+      const steps = duration / (1000 / frameRate);
+      let frame = 0;
+
+      const fromY = [...currentY];
+
+      function easeInOut(t) {
+        return t < 0.5
+          ? 2 * t * t
+          : -1 + (4 - 2 * t) * t;
+      }
+
+      function update() {
+        frame++;
+        const t = Math.min(frame / steps, 1);
+        const eased = easeInOut(t);
+        currentY = currentY.map((_, i) =>
+          fromY[i] + (toY[i] - fromY[i]) * eased
+        );
+        drawWave(currentY);
+        if (frame < steps) {
+          requestAnimationFrame(update);
+        }
+      }
+
+      update();
+    }
+
+    function onToggle() {
+      const f1 = f1Checkbox.checked ? 3 : 0;
+      const f2 = f2Checkbox.checked ? 7 : 0;
+      const targetY = generateYValues(f1, f2);
+      animateWave(targetY);
+    }
+
+    function playTone() {
+      const f1 = f1Checkbox.checked ? 130 : 0;
+      const f2 = f2Checkbox.checked ? 175 : 0;
+
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const duration = 1.5;
+
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gainNode.connect(audioCtx.destination);
+
+      if (f1) {
+        const osc1 = audioCtx.createOscillator();
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
+        osc1.connect(gainNode);
+        osc1.start();
+        osc1.stop(audioCtx.currentTime + duration);
+      }
+
+      if (f2) {
+        const osc2 = audioCtx.createOscillator();
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(f2, audioCtx.currentTime);
+        osc2.connect(gainNode);
+        osc2.start();
+        osc2.stop(audioCtx.currentTime + duration);
+      }
+    }
+
+    f1Checkbox.addEventListener("change", onToggle);
+    f2Checkbox.addEventListener("change", onToggle);
+    playButton.addEventListener("click", playTone);
+
+    onToggle();
+  </script>
+  </section>
+  <section class="title-page">References</section>
+  <section>
+      <h1>References</h1>
+      <ul>
+          <li>Rabiner, Lawrence R., and Ronald W. Schafer. "Introduction to digital speech processing." Foundations and Trends® in Signal Processing 1.1–2 (2007): 1-194.</li>
+          <li>Reetz, Henning, and Allard Jongman. Phonetics: Transcription, production, acoustics, and perception. John Wiley & Sons, 2020.</li>
+          <li>The ear does not do a Fourier transform, https://www.dissonances.blog/p/the-ear-does-not-do-a-fourier-transform</li>
+      </ul>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.querySelectorAll("section").forEach((section, index) => {
+      gsap.from(section, {
+        opacity: 0,
+        y: 100,
+        duration: 0.8,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: section,
+          start: "top center",
+          toggleActions: "play none none reverse",
+          snap: 1 / (document.querySelectorAll("section").length - 1),
+        }
+      });
+    });
+  </script>
+</body>
+</html>
