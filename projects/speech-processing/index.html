@@ -415,14 +415,28 @@ button {
       <p>The source corresponds to the air flow from the lungs supplying the sound wave with a pulse of sound energy.</p>
       <p>The filter corresponds to our vocal tract modifying the the sound wave to produce the different noises we hear when we speak.</p>
       <p>Mathematically this is represented as a "<a href="https://en.wikipedia.org/wiki/Convolution">convolution</a>".</p>
+      <div style="height: 30%; display: flex; justify-content: center;">
+          <img src="source-filter.svg" style="height: 100%;"> </img>
+      </div>
+  </section>
+  <section>
+      <h1>The source-filter model</h1>
+      <p>Tap to select different sources and filters to create different sound waves.</p>
   </section>
   <section class="title-page">Linear Predictive Coding</section>
   <section>
       <h1>Linear Predictive Coding</h1>
+      <p>Linear predictive coding refers to a method to separate out the effects of the source and the filter in a sound wave.</p>
+      <p>It works by attempting to model the filter as an <a href="https://en.wikipedia.org/wiki/Autoregressive_model">autoregressive linear function</a>. This just means that we assume that we can work out what the next part of the speech is by adding and multiplying previous pressure values of the sound wave.</p>
+      <p>The animation below shows that we only need to look at two previous values to work out the next value of a sine wave.</p>
+      <p>Modify the the model parameters below to create different sound waves.</p>
   </section>
   <section class="title-page">Formants</section>
   <section>
       <h1>Formants</h1>
+      <p>Formants are the extra frequencies created by our vocal tract that give vowels their unique sound.</p>
+      <p>Speak into your microphone to see the sound wave and the formants change as you change the shape of your mouth.</p>
+      <p>Try saying "ooh" and "ahh", round your lips or move your tongue around to see how the formants change</p>
   </section>
   <section>
       <h1>The end</h1>
