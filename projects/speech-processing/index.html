@@ -93,7 +93,7 @@
       <p>When these pressure waves reach our ears, they cause our eardrums to vibrate in response.</p>
       <p>Our brains then interpret these vibrations as sound, allowing us to hear.</p>
       <p>Below is a recording of a man saying "hello" and a graph of how the air pressure changes over time.</p>
-      <p>Tap the graph to listen to the man speak.</p>
+      <p>Tap the beginning of the graph to listen to the man speak.</p>
       <br>
       <div id="hello-waveform"></div>
         <script type="module">
@@ -111,7 +111,7 @@
             })
         </script>
     </section>
-  <section class="title-page">How do we perceive sound?</section>
+    <!-- <section class="title-page">How do we perceive sound?</section> -->
   <section>
       <h1>How do we perceive sound?</h1>
       <p>Technically speaking, the word "frequency" refers to how often something repeats in some amount of time.</p>
@@ -307,7 +307,7 @@ button {
     onToggle();
   </script>
   </section>
-  <section class="title-page">How do we make sounds with our mouths?</section>
+  <!-- <section class="title-page">How do we make sounds with our mouths?</section> -->
   <section>
       <h1>How do we make sounds with our mouths?</h1>
       <p>We make sounds through our mouths by pushing air from our lungs through our vocal cords.</p>
@@ -315,15 +315,106 @@ button {
       <p>We can make different sounds by changing the shape of our mouths and moving our tongue to alter the flow of air.</p>
       <p>For example, we can make the sounds "ee" and "uhh" by changing the position of our tongue in our mouth.</p>
   </section>
+    <style>
+        #mouthContainer {
+            position: relative;
+            display: inline-block;
+        }
+        #tongueDot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #ff4444;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            box-shadow: 0 0 8px rgba(255, 68, 68, 0.5);
+        }
+    </style>
+    <section>
+        <h1>How do we make sounds with our mouths?</h1>
+        <p>Tap in different locations to simulate moving the tongue in the mouth.</p>
+        <div id="mouthContainer">
+            <img id="mouthImg" src="mouth-no-tongue.svg" style="width: 400px; margin-top: 1rem;">
+            <div id="tongueDot"></div>
+        </div>
+    </section>
+    <script>
+        const mouthImg = document.getElementById('mouthImg');
+        const tongueDot = document.getElementById('tongueDot');
+        let audioContext = null;
 
-  <section>
-      <h1>How do we make sounds with our mouths?</h1>
-      <p>Tap in different locations to simulate moving the tongue in the mouth.</p>
-      <img src="mouth-no-tongue.svg" style="margin-top: 1rem;"></img>
-  </section>
+        function handleClick(event) {
+            if (!mouthImg.naturalWidth) return;
+
+            const rect = mouthImg.getBoundingClientRect();
+            const scaleX = mouthImg.naturalWidth / rect.width;
+            const scaleY = mouthImg.naturalHeight / rect.height;
+
+            const x = (event.clientX - rect.left) * scaleX;
+            const y = (event.clientY - rect.top) * scaleY;
+
+            tongueDot.style.left = `${event.clientX - rect.left}px`;
+            tongueDot.style.top = `${event.clientY - rect.top}px`;
+            tongueDot.style.display = 'block';
+
+            const xNorm = x / mouthImg.naturalWidth;
+            const yNorm = y / mouthImg.naturalHeight;
+
+            // const F1 = 300 + (900 - 300) * (1 - yNorm);
+            // const F2 = 800 + (2400 - 800) * xNorm;
+            const F1 = 500;
+            const F2 = 2400;
+            
+
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter1 = audioContext.createBiquadFilter();
+            const filter2 = audioContext.createBiquadFilter();
+
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.value = 260; 
+
+            filter1.type = 'bandpass';
+            filter1.frequency.value = F1;
+            filter1.Q.value = 500;
+
+            filter2.type = 'bandpass';
+            filter2.frequency.value = F2;
+            filter2.Q.value = 500;
+
+            gain.connect(audioContext.destination);
+            oscillator.connect(gain)
+            filter1.connect(gain)
+            filter2.connect(gain)
+
+            const now = audioContext.currentTime;
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 3);
+
+            oscillator.start(now);
+            oscillator.stop(now + 3);
+        }
+
+        mouthImg.addEventListener('load', () => {
+            mouthImg.addEventListener('click', handleClick);
+        });
+    </script>
   <section class="title-page">The source-filter model</section>
   <section>
       <h1>The source-filter model</h1>
+      <p>The source-filter model approximates the sound-making process in our mouth by separating out the sound we make into two parts: the "source" and the "filter".</p>
+      <p>The source corresponds to the air flow from the lungs supplying the sound wave with a pulse of sound energy.</p>
+      <p>The filter corresponds to our vocal tract modifying the the sound wave to produce the different noises we hear when we speak.</p>
+      <p>Mathematically this is represented as a "<a href="https://en.wikipedia.org/wiki/Convolution">convolution</a>".</p>
   </section>
   <section class="title-page">Linear Predictive Coding</section>
   <section>
@@ -343,9 +434,24 @@ button {
   <section>
       <h1>References</h1>
       <ul>
-          <li>Rabiner, Lawrence R., and Ronald W. Schafer. "Introduction to digital speech processing." Foundations and Trends® in Signal Processing 1.1–2 (2007): 1-194.</li>
+          <li>Rabiner, Lawrence R., and Ronald W. Schafer. "Introduction to digital speech processing."</li>
+          <li>Rabiner, Lawrence R. Digital processing of speech signals. Pearson Education India, 1978.</li>
           <li>Reetz, Henning, and Allard Jongman. Phonetics: Transcription, production, acoustics, and perception. John Wiley & Sons, 2020.</li>
-          <li>The ear does not do a Fourier transform, https://www.dissonances.blog/p/the-ear-does-not-do-a-fourier-transform</li>
+          <li>
+              The ear does not do a Fourier transform
+              <ul>
+                  <li>
+                      <a href="https://www.dissonances.blog/p/the-ear-does-not-do-a-fourier-transform">https://www.dissonances.blog/p/the-ear-does-not-do-a-fourier-transform</a>
+                  </li>
+              </ul>
+          </li>
+          <li>KlattSyn - Klatt Formant Synthesizer
+              <ul>
+                  <li>
+                      <a href="https://www.source-code.biz/klattSyn/">https://www.source-code.biz/klattSyn/</a>
+                  </li>
+              </ul>
+          </li>
       </ul>
 </section>
 </body>
