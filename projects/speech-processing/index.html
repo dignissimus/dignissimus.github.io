@@ -23,6 +23,15 @@
         text-decoration: none;
     }
 
+    img {
+        max-width: 100%;
+    }
+
+    section {
+        max-width: 800px;
+        margin: auto;
+    }
+
     section.title-page {
             text-align: left;
 
@@ -99,7 +108,7 @@
   <section class="title-page">How do we perceive sound?</section>
   <section>
       <h1>How do we perceive sound?</h1>
-      <p>When we use it technially, the word "frequency" refers to how often something repeats in some amount of time.</p>
+      <p>Technically speaking, the word "frequency" refers to how often something repeats in some amount of time.</p>
       <p>Simply put, the faster something repeats the higher it sounds to us.</p>
       <p>Tap the button below to hear something that vibrates about 260 times a second or at a <i>frequency</i> of <i>260 Hertz</i>.</p>
       <br>
@@ -125,7 +134,8 @@
 
     input[type="checkbox"] {
       accent-color: #ff69b4;
-      transform: scale(1.3);
+      transform: scale(2);
+      margin: 0.5rem;
     }
 
     svg {
@@ -157,22 +167,27 @@ button {
   </style>
   <section>
       <h1>How do we perceive sound?</h1>
-      <p>The sound from earlier is called a sine wave and we can combine different sine waves to make new sounds</p>
+      <p>The sound from earlier is called a sine wave and we can combine different sine waves to make new sounds.</p>
+      <p>If we zoom in on the sound waves then we can see a clear repeating pattern.</p>
+      <p>Tap on the different frequencies to add and remove different frequencies from the sound wave.</p>
 
-      <div class="controls">
-        <label>
-          <input type="checkbox" id="f1" checked>
-          260Hz
-        </label>
-        <label>
-          <input type="checkbox" id="f2" checked>
-          350Hz
-        </label>
-      </div>
-  <svg id="waveform" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
-    <path fill="none" stroke="#ff69b4" stroke-width="2" />
-  </svg>
-<button id="play">Play Tone</button>
+      <div style="display: flex; width: 100%; justify-content: center; align-items: center; flex-direction: column;">
+          <div class="controls" style="width: auto;">
+            <label style="display: inline;">
+              <input type="checkbox" id="f1" checked>
+              260Hz
+            </label>
+            <label style="display: inline;">
+              <input type="checkbox" id="f2" checked>
+              350Hz
+            </label>
+          </div>
+      <svg id="waveform" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg" style="margin: 2rem;">
+        <path fill="none" stroke="#ff69b4" stroke-width="2" />
+      </svg>
+      <br>
+        <button id="play">Play Tone</button>
+    </div>
 
 
   <script>
@@ -187,11 +202,12 @@ button {
     const midY = height / 2;
     const pointCount = width + 1;
     let currentY = new Array(pointCount).fill(midY);
+    let dt = 0;
 
     function generateYValues(f1, f2) {
       const ys = [];
       for (let x = 0; x <= width; x++) {
-        const t = x / width * 2 * Math.PI;
+        const t = (x + ++dt) / width * 2 * Math.PI;
         const y = Math.sin(f1 * t) * 40 + Math.sin(f2 * t) * 40;
         ys.push(midY - y);
       }
@@ -239,21 +255,28 @@ button {
       const f2 = f2Checkbox.checked ? 7 : 0;
       const targetY = generateYValues(f1, f2);
       animateWave(targetY);
+      playTone();
     }
 
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const duration = 3;
+    const gainNode = audioCtx.createGain();
+    let osc1 = audioCtx.createOscillator();
+    osc1.connect(gainNode);
+    let osc2 = audioCtx.createOscillator();
+    osc2.connect(gainNode);
+
     function playTone() {
+       try { osc1.disconnect(gainNode) } catch {};
+       try { osc2.disconnect(gainNode) } catch {};
       const f1 = f1Checkbox.checked ? 260 : 0;
       const f2 = f2Checkbox.checked ? 350 : 0;
 
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const duration = 3;
-
-      const gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
       gainNode.connect(audioCtx.destination);
 
       if (f1) {
-        const osc1 = audioCtx.createOscillator();
+        osc1 = audioCtx.createOscillator();
         osc1.type = "sine";
         osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
         osc1.connect(gainNode);
@@ -262,7 +285,7 @@ button {
       }
 
       if (f2) {
-        const osc2 = audioCtx.createOscillator();
+        osc2 = audioCtx.createOscillator();
         osc2.type = "sine";
         osc2.frequency.setValueAtTime(f2, audioCtx.currentTime);
         osc2.connect(gainNode);
@@ -281,6 +304,16 @@ button {
   <section class="title-page">How do we make sounds with our mouths?</section>
   <section>
       <h1>How do we make sounds with our mouths?</h1>
+      <p>We make sounds through our mouths by pushing air from our lungs through our vocal cords.</p>
+      <p>Our vocal cords vibrate to control pitch. Tightening our vocal cords causes it to vibrate faster and produce a higher sound.</p>
+      <p>We can create distinct sounds by changing the shape of our mouths and moving our tongue to alter the flow of air.</p>
+      <p>For example, we can make the sounds "ee" and "uhh" by changing the position of our tongue in our mouth.</p>
+  </section>
+
+  <section>
+      <h1>How do we make sounds with our mouths?</h1>
+      <p>Tap in different locations to simulate moving the tongue in the mouth.</p>
+      <img src="mouth-no-tongue.svg"></img>
   </section>
   <section class="title-page">The source-filter model</section>
   <section>
