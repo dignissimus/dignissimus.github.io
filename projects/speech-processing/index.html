@@ -18,6 +18,12 @@
       color: #222222;
     }
 
+    @media screen and (min-width: 800px) {
+      html {
+        font-size: 1.2em;
+      }
+    }
+
     a {
         color: hsl(214, 66%, 40%);
         text-decoration: none;
@@ -306,14 +312,14 @@ button {
       <h1>How do we make sounds with our mouths?</h1>
       <p>We make sounds through our mouths by pushing air from our lungs through our vocal cords.</p>
       <p>Our vocal cords vibrate to control pitch. Tightening our vocal cords causes it to vibrate faster and produce a higher sound.</p>
-      <p>We can create distinct sounds by changing the shape of our mouths and moving our tongue to alter the flow of air.</p>
+      <p>We can make different sounds by changing the shape of our mouths and moving our tongue to alter the flow of air.</p>
       <p>For example, we can make the sounds "ee" and "uhh" by changing the position of our tongue in our mouth.</p>
   </section>
 
   <section>
       <h1>How do we make sounds with our mouths?</h1>
       <p>Tap in different locations to simulate moving the tongue in the mouth.</p>
-      <img src="mouth-no-tongue.svg"></img>
+      <img src="mouth-no-tongue.svg" style="margin-top: 1rem;"></img>
   </section>
   <section class="title-page">The source-filter model</section>
   <section>
@@ -326,6 +332,11 @@ button {
   <section class="title-page">Formants</section>
   <section>
       <h1>Formants</h1>
+  </section>
+  <section>
+      <h1>The end</h1>
+      <p>I wrote the Formant estimation code in <a href="https://ziglang.org/">Zig</a> where I implemented <a href="https://c.mql5.com/3/133/Tutorial_on_Burg_smethod_algorithm_recursion.pdf">Burg's algorithm</a> and you can find my source code <a href="https://github.com/dignissimus/acoustic-plane/blob/main/src/ar.zig">here</a>.</p>
+      <p>I also wrote a game that uses formants and you can find it <a href="#">here</a>.</p>
   </section>
 
   <section class="title-page">References</section>
