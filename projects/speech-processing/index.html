@@ -55,11 +55,6 @@
     h1 {
         margin-top: 1rem;
     }
-    
-    /*.section1 { background: #f87171; }
-    .section2 { background: #60a5fa; }
-    .section3 { background: #34d399; }
-    .section4 { background: #fbbf24; }*/
   </style>
   <script src="essential_audio.js"></script>
 <link rel="stylesheet" href="essential_audio.css"></link>
@@ -101,7 +96,7 @@
       <h1>How do we perceive sound?</h1>
       <p>When we use it technially, the word "frequency" refers to how often something repeats in some amount of time.</p>
       <p>Simply put, the faster something repeats the higher it sounds to us.</p>
-      <p>Tap the button below to hear something that vibrates about 130 times a second or at a <i>frequency</i> of <i>130 Hertz</i>.</p>
+      <p>Tap the button below to hear something that vibrates about 260 times a second or at a <i>frequency</i> of <i>260 Hertz</i>.</p>
       <br>
         <div class="essential_audio" data-url="C2.ogg"></div>
       <br>
@@ -162,11 +157,11 @@ button {
       <div class="controls">
         <label>
           <input type="checkbox" id="f1" checked>
-          130Hz
+          260Hz
         </label>
         <label>
           <input type="checkbox" id="f2" checked>
-          175Hz
+          350Hz
         </label>
       </div>
   <svg id="waveform" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
@@ -242,11 +237,11 @@ button {
     }
 
     function playTone() {
-      const f1 = f1Checkbox.checked ? 130 : 0;
-      const f2 = f2Checkbox.checked ? 175 : 0;
+      const f1 = f1Checkbox.checked ? 260 : 0;
+      const f2 = f2Checkbox.checked ? 350 : 0;
 
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const duration = 1.5;
+      const duration = 3;
 
       const gainNode = audioCtx.createGain();
       gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
