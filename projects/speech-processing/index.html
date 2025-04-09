@@ -356,23 +356,21 @@ button {
             const x = (event.clientX - rect.left) * scaleX;
             const y = (event.clientY) * scaleY;
 
-            tongueDot.style.left = `${event.clientX - rect.left - 5}px`;
-            tongueDot.style.top = `${event.clientY - rect.top + 12}px`;
-            tongueDot.style.display = 'block';
-
             xMin = 60;
             yMin = 395;
             xMax = 160;
             yMax = 500;
 
 
+
+            if (!(0 <= xNorm) || !(xNorm <= 1) || !(0 <= yNorm) || !(yNorm <= 1)) return;
+            tongueDot.style.left = `${event.clientX - rect.left - 5}px`;
+            tongueDot.style.top = `${event.clientY - rect.top + 12}px`;
+            tongueDot.style.display = 'block';
+
+
             const xNorm = (x - xMin) / (xMax - xMin);
             const yNorm = (y - yMin) / (yMax - yMin);
-            console.log(x, y);
-            if (!(0 <= xNorm) || !(xNorm <= 1) || !(0 <= yNorm) || !(yNorm <= 1)) return;
-            console.log(xMin, x, xMax, xNorm);
-
-
             const F1 = 250 + (900 - 250) * yNorm;
             const F2 = 2400 + (500 - 2400) * xNorm;
             play(`f0=220&f1=${F1}/76/0&f2=${F2}/102/-8&f3=2831/72/-15&f4=3168/102/-19&f5=4135/816/-30&f6=5020/596/-35`)
