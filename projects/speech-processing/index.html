@@ -49,7 +49,7 @@
     }
     
     section {
-        height: 100vh;
+      height: 100vh;
       padding: 2rem;
       scroll-snap-align: start;
       transition: background 0.5s;
@@ -424,13 +424,192 @@ button {
       <p>Tap to select different sources and filters to create different sound waves.</p>
   </section>
   <section class="title-page">Linear Predictive Coding</section>
-  <section>
+  <section class="lpc">
       <h1>Linear Predictive Coding</h1>
       <p>Linear predictive coding refers to a method to separate out the effects of the source and the filter in a sound wave.</p>
       <p>It works by attempting to model the filter as an <a href="https://en.wikipedia.org/wiki/Autoregressive_model">autoregressive linear function</a>. This just means that we assume that we can work out what the next part of the speech is by adding and multiplying previous pressure values of the sound wave.</p>
       <p>The animation below shows that we only need to look at two previous values to work out the next value of a sine wave.</p>
       <p>Modify the the model parameters below to create different sound waves.</p>
+      <canvas id="canvas" width="800" height="400"></canvas>
+
+      <div class="controls">
+        <label>
+          φ₁:
+          <input id="phi1" type="range" min="-1.5" max="1.98" step="0.1">
+          <span id="phi1Display"></span>
+        </label>
+        <label>
+          φ₂:
+          <input id="phi2" type="range" min="-1.5" max="1.5" step="0.1">
+          <span id="phi2Display"></span>
+        </label>
+        <button id="restartBtn">Restart</button>
+      </div>
   </section>
+  <style>
+    .lpc input[type="range"] {
+      vertical-align: middle;
+      accent-color: #ff69b4;
+    }
+    .lpc label {
+      font-size: 1.3em;
+      margin-right: 20px;
+      display: inline-block;
+    }
+    
+    .lpc span {
+      margin-left: 5px;
+    }
+
+    .lpc .controls {
+      margin-top: 20px;
+      background: #ffe6f0;
+      padding: 15px 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3);
+    }
+  </style>
+  <script>
+    (() => {
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const omega = Math.PI / 20;
+    const defaultPhi1 = 2 * Math.cos(omega);
+    const defaultPhi2 = -1;
+    let phi1 = defaultPhi1;
+    let phi2 = defaultPhi2;
+    const phi1Slider = document.getElementById("phi1");
+    const phi2Slider = document.getElementById("phi2");
+    const phi1Display = document.getElementById("phi1Display");
+    const phi2Display = document.getElementById("phi2Display");
+
+    const initPhi = () => {
+        phi1 = defaultPhi1;
+        phi2 = defaultPhi2;
+
+        phi1Slider.value = phi1;
+        phi2Slider.value = phi2;
+        phi1Display.textContent = phi1.toFixed(1);
+        phi2Display.textContent = phi2.toFixed(1);
+    };
+
+
+    const numFrames = 300;
+    const windowSize = 60;
+    let x = new Array(numFrames).fill(0);
+    let currentFrame = 0;
+
+    x[0] = Math.sin(0);
+    x[1] = Math.sin(omega);
+
+    const xStep = width / windowSize;
+    const yScale = height / 3;
+    const yCenter = height / 2;
+
+    let animInterval;
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, width, height);
+    }
+
+    function drawCurve() {
+      ctx.beginPath();
+      const start = Math.max(0, currentFrame - windowSize + 1);
+      for (let i = start; i <= currentFrame; i++) {
+        const t = (i - start) * xStep;
+        const y = yCenter - x[i] * yScale;
+        if (i === start) ctx.moveTo(t, y);
+        else ctx.lineTo(t, y);
+      }
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#ff85a2";
+      ctx.stroke();
+    }
+
+    function drawArrow(x1, y1, x2, y2, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      const headLength = 10;
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6),
+                 y2 - headLength * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6),
+                 y2 - headLength * Math.sin(angle + Math.PI / 6));
+      ctx.lineTo(x2, y2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawContributions() {
+      if (currentFrame < 2) return;
+      const baseX = (windowSize - 1) * xStep;
+      drawArrow(baseX, yCenter, baseX, yCenter - x[currentFrame] * yScale, "#ffb347");
+    }
+
+    function updateSimulation() {
+      if (currentFrame < numFrames - 1) {
+        if (currentFrame >= 1) {
+          const newValue = phi1 * x[currentFrame] + phi2 * x[currentFrame - 1];
+          currentFrame++;
+          x[currentFrame] = newValue;
+        } else {
+          currentFrame++;
+        }
+      } else {
+        clearInterval(animInterval);
+      }
+    }
+
+    function animate() {
+      clearCanvas();
+      drawCurve();
+      drawContributions();
+    }
+
+    function restartSimulation() {
+      clearInterval(animInterval);
+      currentFrame = 1;
+      x = new Array(numFrames).fill(0);
+      x[0] = Math.sin(0);
+      x[1] = Math.sin(omega);
+      initPhi();
+      while (currentFrame < windowSize) updateSimulation();
+      animInterval = setInterval(() => {
+        updateSimulation();
+        animate();
+      }, 100);
+    }
+
+    phi1Slider.addEventListener("input", function() {
+      phi1 = parseFloat(this.value);
+      phi1Display.textContent = phi1.toFixed(1);
+    });
+
+    phi2Slider.addEventListener("input", function() {
+      phi2 = parseFloat(this.value);
+      phi2Display.textContent = phi2.toFixed(1);
+    });
+
+    document.getElementById("restartBtn").addEventListener("click", () => {
+      restartSimulation();
+    });
+
+    restartSimulation();
+    })()
+  </script>
   <section class="title-page">Formants</section>
   <section>
       <h1>Formants</h1>
