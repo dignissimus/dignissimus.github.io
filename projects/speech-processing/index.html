@@ -349,19 +349,24 @@ button {
 
         function handleClick(event) {
             if (!mouthImg.naturalWidth) return;
-
             const rect = mouthImg.getBoundingClientRect();
+            const dx = event.clientX - rect.left;
+            const dy = event.clientY - rect.top;
+            if (!(0 <= dx) || !(dx <= rect.width) || !(0 <= dy) || !(dy <= rect.height)) return;
+            const dxNorm = dx / rect.width;
+            const dyNorm = dy / rect.height;
+
             const scaleX = mouthImg.width / rect.width;
             const scaleY = mouthImg.height / rect.height;
             const x = (event.clientX - rect.left) * scaleX;
             const y = (event.clientY) * scaleY;
 
-            xMin = 60;
-            yMin = 395;
-            xMax = 160;
-            yMax = 500;
-            const xNorm = (x - xMin) / (xMax - xMin);
-            const yNorm = (y - yMin) / (yMax - yMin);
+            xMin = 0.2;
+            yMin = 0.55;
+            xMax = 0.51;
+            yMax = 0.75;
+            const xNorm = (dxNorm - xMin) / (xMax - xMin);
+            const yNorm = (dyNorm - yMin) / (yMax - yMin);
             if (!(0 <= xNorm) || !(xNorm <= 1) || !(0 <= yNorm) || !(yNorm <= 1)) return;
             tongueDot.style.left = `${event.clientX - rect.left - 5}px`;
             tongueDot.style.top = `${event.clientY - rect.top + 12}px`;
