@@ -175,7 +175,7 @@ button {
       <h1>How do we perceive sound?</h1>
       <p>The sound from earlier is called a sine wave and we can combine different sine waves to make new sounds.</p>
       <p>If we zoom in on the sound waves then we can see a clear repeating pattern.</p>
-      <p>Tap on the different frequencies to add and remove different frequencies from the sound wave.</p>
+      <p>Tap on the different frequencies to add and remove them from the sound wave.</p>
 
       <div style="display: flex; width: 100%; justify-content: center; align-items: center; flex-direction: column;">
           <div class="controls" style="width: auto;">
@@ -430,31 +430,33 @@ button {
       <p>It works by attempting to model the filter as an <a href="https://en.wikipedia.org/wiki/Autoregressive_model">autoregressive linear function</a>. This just means that we assume that we can work out what the next part of the speech is by adding and multiplying previous pressure values of the sound wave.</p>
       <p>The animation below shows that we only need to look at two previous values to work out the next value of a sine wave.</p>
       <p>Modify the the model parameters below to create different sound waves.</p>
-      <canvas id="canvas" width="800" height="400"></canvas>
+      <canvas id="canvas" width="1200" height="600"></canvas>
 
       <div class="controls">
         <label>
-          φ₁:
+          φ₁
           <input id="phi1" type="range" min="-1.5" max="1.98" step="0.1">
           <span id="phi1Display"></span>
         </label>
         <label>
-          φ₂:
+          φ₂
           <input id="phi2" type="range" min="-1.5" max="1.5" step="0.1">
           <span id="phi2Display"></span>
         </label>
+      </div>
+      <div style="display: flex; justify-content: center;">
         <button id="restartBtn">Restart</button>
       </div>
+
   </section>
   <style>
     .lpc input[type="range"] {
       vertical-align: middle;
       accent-color: #ff69b4;
+      width: 60px;
     }
     .lpc label {
       font-size: 1.3em;
-      margin-right: 20px;
-      display: inline-block;
     }
     
     .lpc span {
@@ -462,12 +464,17 @@ button {
     }
 
     .lpc .controls {
-      margin-top: 20px;
+      padding: 10px;
       background: #ffe6f0;
-      padding: 15px 25px;
+      display: flex;
+      justify-content: space-around;
       border-radius: 15px;
-      box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3);
     }
+
+    .lpc canvas {
+        width: 100%;
+    }
+
   </style>
   <script>
     (() => {
@@ -525,7 +532,7 @@ button {
         if (i === start) ctx.moveTo(t, y);
         else ctx.lineTo(t, y);
       }
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 10;
       ctx.strokeStyle = "#ff85a2";
       ctx.stroke();
     }
@@ -534,13 +541,14 @@ button {
       ctx.save();
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 10;
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
       ctx.stroke();
 
-      const headLength = 10;
+      const headLength = 40;
+      y2 += 10 * Math.sign(y2 - yCenter);
       const angle = Math.atan2(y2 - y1, x2 - x1);
       ctx.beginPath();
       ctx.moveTo(x2, y2);
@@ -619,7 +627,7 @@ button {
   </section>
   <section>
       <h1>The end</h1>
-      <p>I wrote the Formant estimation code in <a href="https://ziglang.org/">Zig</a> where I implemented <a href="https://c.mql5.com/3/133/Tutorial_on_Burg_smethod_algorithm_recursion.pdf">Burg's algorithm</a> and you can find my source code <a href="https://github.com/dignissimus/acoustic-plane/blob/main/src/ar.zig">here</a>. I use <a href="https://github.com/bluealmost/zpoly">zpoly</a> for polynomial root-finding</p>
+      <p>I wrote the Formant estimation code in <a href="https://ziglang.org/">Zig</a> where I implemented <a href="https://c.mql5.com/3/133/Tutorial_on_Burg_smethod_algorithm_recursion.pdf">Burg's algorithm</a> and you can find my source code <a href="https://github.com/dignissimus/acoustic-plane/blob/main/src/ar.zig">here</a>. I use <a href="https://github.com/bluealmost/zpoly">zpoly</a> for polynomial root-finding.</p>
       <p>I also wrote a Python program to create vowel formant plots and you can find that <a href="https://github.com/dignissimus/formant-plotter/">here</a></p>
       <p>I wrote the speech synthesiser in Javascript and you can find my source code for that <a href="#">here</a></p>
       <p>I also wrote a game that uses formants and you can find it <a href="#">here</a>.</p>
