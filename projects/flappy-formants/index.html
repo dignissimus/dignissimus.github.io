@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Voice Controlled Flappy Bird</title>
+    <title>Flappy Formants</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #87CEEB; }
         canvas { display: block; }
@@ -207,8 +207,8 @@
             const lo = 400;
             bird.y = canvas.height * (1 - (clamp(window.averageF2, lo, hi) - lo) / (hi - lo));
             bird.y -= (hi - lo) / 2;
-            bird.y *= 0.9;
-            bird.y += (hi - lo) / 2 * 0.9;
+            bird.y *= 0.95;
+            bird.y += (hi - lo) / 2 * 0.95;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawPipes();
