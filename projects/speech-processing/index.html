@@ -396,10 +396,101 @@ button {
           <img src="source-filter.svg" style="height: 100%;"> </img>
       </div>
   </section>
+    <style>
+        input[type="radio"] {
+          accent-color: #ff69b4;
+          transform: scale(2);
+          margin: 0.5rem;
+        }
+    </style>
+  <style>
+    
+    .control-group {
+      display: flex;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .control-group label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: #333;
+    }
+  </style>
   <section>
       <h1>The source-filter model</h1>
       <p>Tap to select different sources and filters to create different sound waves.</p>
+  <div>
+      <div class="group-title">Sources</div>
+      <div class="control-group">
+        <label>
+          <input type="radio" name="source" value="violin" onchange="selectViolin()" selected autocomplete="off">
+          Violin
+        </label>
+        <label>
+          <input type="radio" name="source" value="chainsaw" onchange="selectChainSaw()" autocomplete="off">
+          Chainsaw
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <div class="group-title">Filters</div>
+      <div class="control-group">
+        <label>
+          <input type="radio" name="filter" value="algebra" onchange="selectAlgebra()" selected autocomplete="off">
+          "Algebra is a branch of mathematics."
+        </label>
+        <label>
+          <input type="radio" name="filter" value="remarkable" onchange="selectRemarkable()" autocomplete="off">
+          "She achieved remarkable results."
+        </label>
+      </div>
+    </div>
+    <div style="display: flex; justify-content: center;"> <button onclick="playSynthesis()"> Synthesise</button> </div>
+  <audio id="violin" src="violin-clip.mp3"></audio>
+  <audio id="chainsaw" src="chainsaw-clip.mp3"></audio>
+  <audio id="algebra" src="algebra.mp3"></audio>
+  <audio id="remarkable" src="remarkable.mp3"></audio>
+  <audio id="algebra-violin" src="algebra-violin.mp3"></audio>
+  <audio id="algebra-chainsaw" src="algebra-chainsaw.mp3"></audio>
+  <audio id="remarkable-violin" src="algebra-violin.mp3"></audio>
+  <audio id="remarkable-chainsaw" src="remarkable-chainsaw.mp3"></audio>
   </section>
+  <script>
+      let source = "violin";
+      let filter = "algebra";
+      const violinElement = document.getElementById("violin");
+      const chainsawElement = document.getElementById("chainsaw");
+      const remarkableElement = document.getElementById("remarkable");
+      const algebraElement = document.getElementById("algebra");
+      let hasPlayed = false;
+      const selectViolin = () => {
+          source = "violin";
+          if (!hasPlayed) violinElement.play();
+      }
+      const selectChainSaw = () => {
+          source = "chainsaw";
+          if (!hasPlayed) chainsawElement.play();
+      }
+
+      const selectAlgebra = () => {
+          filter = "algebra";
+          if (!hasPlayed) algebraElement.play();
+      }
+
+      const selectRemarkable = () => {
+          filter = "remarkable";
+          if (!hasPlayed) remarkableElement.play();
+      }
+     const playSynthesis = () => {
+         hasPlayed = true;
+         document.getElementById(`${filter}-${source}`).play();
+      }
+  </script>
   <section class="title-page">Linear Predictive Coding</section>
   <section class="lpc">
       <h1>Linear Predictive Coding</h1>
@@ -605,7 +696,7 @@ button {
   <section>
       <h1>The end</h1>
       <p>I wrote the Formant estimation code in <a href="https://ziglang.org/">Zig</a> where I implemented <a href="https://c.mql5.com/3/133/Tutorial_on_Burg_smethod_algorithm_recursion.pdf">Burg's algorithm</a> and you can find my source code <a href="https://github.com/dignissimus/acoustic-plane/blob/main/src/ar.zig">here</a>. I use <a href="https://github.com/bluealmost/zpoly">zpoly</a> for polynomial root-finding.</p>
-      <p>I also wrote a Python program to create vowel formant plots and you can find that <a href="https://github.com/dignissimus/formant-plotter/">here</a></p>
+      <p>I also wrote a Python program to create animated vowel formant plots and you can find that <a href="https://github.com/dignissimus/formant-plotter/">here</a></p>
       <p>I used <a href="https://github.com/chdh/klatt-syn">Christian d'Heureuse's implementation</a> of <a href="https://en.wikipedia.org/wiki/Dennis_H._Klatt">Dennis Klatt</a>'s <a href="https://linguistics.berkeley.edu/plab/guestwiki/index.php?title=Klatt_Synthesizer">Klatt Synthesiser</a> to synthesise speech.</p>
       <p>I also wrote a game that uses formants and you can find it <a href="#">here</a>.</p>
   </section>
