@@ -410,6 +410,7 @@ button {
       margin-bottom: 1.5rem;
       flex-wrap: wrap;
       gap: 1rem;
+      margin-top: 1rem;
     }
     
     .control-group label {
@@ -419,11 +420,14 @@ button {
       font-size: 1.1rem;
       color: #333;
     }
+    .box-group {
+        margin-top: 2rem;
+    }
   </style>
   <section>
       <h1>The source-filter model</h1>
       <p>Tap to select different sources and filters to create different sound waves.</p>
-  <div>
+    <div class="box-group">
       <div class="group-title">Sources</div>
       <div class="control-group">
         <label>
@@ -437,7 +441,7 @@ button {
       </div>
     </div>
 
-    <div>
+    <div class=box-group>
       <div class="group-title">Filters</div>
       <div class="control-group">
         <label>
@@ -457,7 +461,7 @@ button {
   <audio id="remarkable" src="remarkable.mp3"></audio>
   <audio id="algebra-violin" src="algebra-violin.mp3"></audio>
   <audio id="algebra-chainsaw" src="algebra-chainsaw.mp3"></audio>
-  <audio id="remarkable-violin" src="algebra-violin.mp3"></audio>
+  <audio id="remarkable-violin" src="remarkable-violin.mp3"></audio>
   <audio id="remarkable-chainsaw" src="remarkable-chainsaw.mp3"></audio>
   </section>
   <script>
