@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Introduction to Speech Processing</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="klatt-synth.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
@@ -145,7 +146,7 @@
       margin: 0.5rem;
     }
 
-    svg {
+    svg.waveform {
       width: 100%;
       max-width: 600px;
       height: 200px;
@@ -189,7 +190,7 @@ button {
               350Hz
             </label>
           </div>
-      <svg id="waveform" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg" style="margin: 1rem;">
+      <svg id="waveform" class="waveform"  viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg" style="margin: 1rem;">
         <path fill="none" stroke="#ff69b4" stroke-width="2" />
       </svg>
       <br>
@@ -704,11 +705,127 @@ button {
     })()
   </script>
   <section class="title-page">Formants</section>
-  <section>
-      <h1>Formants</h1>
-      <p>Formants are the extra frequencies created by our vocal tract that give vowels their unique sound.</p>
-      <p>Speak into your microphone to see the sound wave and the formants change as you change the shape of your mouth.</p>
-      <p>Try saying "ooh" and "ahh", round your lips or move your tongue up, down, back and forth to see how the formants change</p>
+  <style>
+    #formant-div {
+        display: none;
+        margin-top: 3rem;
+        font-weight: bold;
+      font-size: 25pt;
+    }
+    .formant input[type="range"] {
+      vertical-align: middle;
+      accent-color: #ff69b4;
+      width: 100%;
+      display: none;
+    }
+  </style>
+<section class="formant">
+    <h1>Formants</h1>
+    <p>Formants are the extra frequencies created by our vocal tract that give vowels their unique sound.</p>
+    <p>Speak into your microphone to see the sound wave and the formants change as you change the shape of your mouth.</p>
+    <p>Try saying "ee" then pulling your tongue back to say "oo" to see how the formant changes.</p>
+    
+    <div id="formant-div">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span>oo</span>
+            <input id="formant-value" type="range" min="500" max="2500" style="flex: 1;">
+            <span>ee</span>
+        </div>
+    </div>
+
+    <div class="button-div">
+        <button id="start" onclick="begin()">Start demo</button>
+    </div>
+</section>
+        <script>
+
+            const begin = () => {
+            const importObject = {
+                my_namespace: {
+                    imported_func: arg => {
+                        console.log(arg);
+                    }
+                }
+            };
+
+            WebAssembly.instantiateStreaming(fetch("formant-finder.wasm"), importObject).then(x => {
+                window.ar = x;
+                window.burgs_method = x.instance.exports.burgs_method;
+            }).then(() => start());
+
+
+            const f1Buffer = [];
+            const f2Buffer = [];
+
+            const rms = (snippet) => {
+              let sum = 0;
+              for (let i = 0; i < snippet.length; i++) {
+                sum += snippet[i] * snippet[i];
+              }
+              return Math.sqrt(sum / snippet.length);
+            }
+            const start = async () => {
+                document.getElementById("start").style.display = "none";
+                document.getElementById("formant-value").style.display = "block";
+                document.getElementById("formant-div").style.display = "block";
+                const audioContext = new AudioContext();
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    echoCancellation: false,
+                    noiseSuppresion: false,
+                    channelCount: 1,
+                    sampleRate: 44100,
+                });
+                const source = audioContext.createMediaStreamSource(stream);
+                await audioContext.audioWorklet.addModule('processor.js');
+                const workletNode = new AudioWorkletNode(audioContext, 'processor');
+                source.connect(workletNode);
+                workletNode.connect(audioContext.destination);
+
+                const ORDER = 50;
+                const MAX_DATA_SIZE = 88200;
+                const MAX_BUFFER = 10;
+
+                const data_ptr = ar.instance.exports.alloc(MAX_DATA_SIZE);
+                const coefficients_ptr = ar.instance.exports.alloc(ORDER);
+                const formants_ptr = ar.instance.exports.alloc(2);
+
+                workletNode.port.onmessage = (event) => {
+                    if (rms(event.data) < 0.01) return;
+                    data_size = Math.min(MAX_DATA_SIZE, event.data.length)
+
+                    const data = new Float32Array(ar.instance.exports.memory.buffer, data_ptr, data_size);
+                    const formants = new Float32Array(ar.instance.exports.memory.buffer, formants_ptr, 2);
+                    for (i = 0; i < data_size; ++i) {
+                        data[i] = event.data[i];
+                    }
+
+                    // hamming window
+                    for (let i = 0; i < data.length; i++) {
+                        const w = 0.54 - 0.46 * Math.cos((2 * Math.PI * i) / (data.length - 1));
+                        data[i] *= w;
+                    }
+
+                    burgs_method(data_ptr, coefficients_ptr, formants_ptr, data_size, ORDER);
+
+                    const f1 = Math.round(formants[0]);
+                    const f2 = Math.round(formants[1]);
+                    if (isFinite(f1) || isFinite(f2)) {
+                        f1Buffer.push(f1);
+                        f2Buffer.push(f2);
+                    }
+                    if (f1Buffer.length > MAX_BUFFER) f1Buffer.shift();
+                    if (f2Buffer.length > MAX_BUFFER) f2Buffer.shift();
+
+                    const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+                    const averageF1 = avg(f1Buffer);
+                    const averageF2 = avg(f2Buffer);
+
+                    document.getElementById("formant-value").value = averageF2;
+                };
+            }
+            }
+        </script>
   </section>
   <section>
       <h1>The end</h1>
