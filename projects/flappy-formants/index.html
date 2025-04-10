@@ -18,6 +18,9 @@
     </style>
 </head>
 <body>
+    <div id="help-text">
+        <p>Say "ee" to move up and bring your tongue back and say "oo" to move down. Put your tongue in the middle and say <a href="https://en.wikipedia.org/wiki/Close_central_rounded_vowel">ʉ</a> to move to the center of the screen.</p>
+    </div>
     <button id="start-button" onclick="startGame()">Start Game</button>
     <div id="plot"></div>
     <canvas id="gameCanvas"></canvas>
@@ -44,6 +47,7 @@
 
         const startVoice = async () => {
             document.getElementById("start-button").style.display = "none";
+            document.getElementById("help-text").style.display = "none";
             document.getElementById("plot").style.display = "block";
             const audioContext = new AudioContext();
             const stream = await navigator.mediaDevices.getUserMedia({
