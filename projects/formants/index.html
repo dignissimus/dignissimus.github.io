@@ -35,7 +35,7 @@
               color: #555;
             }
             svg {
-              display: block;
+              display: none;
               margin: auto;
               background-color: #fff;
               box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
@@ -63,14 +63,23 @@
               stroke: #fff;
               stroke-width: 1.5px;
             }
+            .button-div {
+                display: flex;
+                justify-content: center;
+                width: 100vw;
+            }
         </style>
     </head>
 
     <body>
         <h3>Live Vowel Formant Plot</h3>
-        <svg width="600" height="500"></svg>
+        <svg id="plot" width="600" height="500"></svg>
+        <div class="button-div">
+            <button id="start" onclick="begin()">Start demo</button>
+        </div>
 
         <script>
+            begin = () => {
             const rms = (snippet) => {
               let sum = 0;
               for (let i = 0; i < snippet.length; i++) {
@@ -160,6 +169,8 @@
             const f2Buffer = [];
 
             const start = async (dot) => {
+                document.getElementById("start").style.display = "none";
+                document.getElementById("plot").style.display = "block";
                 const audioContext = new AudioContext();
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: true,
@@ -220,7 +231,7 @@
                         .style("opacity", 1);
                 };
             }
+            }
         </script>
-        <button onclick="start()">Start demo</button>
     </body>
 </html>
