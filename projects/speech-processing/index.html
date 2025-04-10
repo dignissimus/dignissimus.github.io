@@ -385,6 +385,13 @@ button {
             mouthImg.addEventListener('click', handleClick);
         });
     </script>
+  <section>
+      <h1>How do we make sounds with our mouths?</h1>
+      Tap the play button to listen to the <a href="https://en.wikipedia.org/wiki/DECtalk">DECtalk synthesiser</a> sing <a href="https://en.wikipedia.org/wiki/Daisy_Bell">Daisy Bell</a>
+      <br>
+      <br>
+      <div class="essential_audio" data-url="daisy-bell.ogg"></div>
+  </section>
   <section class="title-page">The source-filter model</section>
   <section>
       <h1>The source-filter model</h1>
@@ -505,10 +512,10 @@ button {
   <section class="lpc">
       <h1>Linear Predictive Coding</h1>
       <p>Linear predictive coding refers to a method to separate out the effects of the source and the filter in a sound wave.</p>
-      <p>It works by attempting to model the filter as an <a href="https://en.wikipedia.org/wiki/Autoregressive_model">autoregressive linear function</a>. This means that we assume that we can work out what the next part of the speech is by adding and multiplying previous pressure values of the sound wave.</p>
+      <p>It works by modelling the filter as an <a href="https://en.wikipedia.org/wiki/Autoregressive_model">autoregressive linear function</a>. This means that we assume that we can work out what the next part of the speech is by adding and multiplying previous pressure values of the sound wave.</p>
       <p>The animation below shows that we only need to look at two previous values to work out the next value of a sine wave. φ₁ controls how much we multiply the previous value and φ₂ controls how much we multiply the value before that.</p>
       <p>Modify the the model parameters below to create different sound waves.</p>
-      <canvas id="canvas" width="1200" height="600"></canvas>
+      <canvas id="canvas" width="1200" height="300"></canvas>
 
       <div class="controls">
         <label>
@@ -707,7 +714,7 @@ button {
       <h1>The end</h1>
       <p>I wrote the Formant estimation code in <a href="https://ziglang.org/">Zig</a> where I implemented <a href="https://c.mql5.com/3/133/Tutorial_on_Burg_smethod_algorithm_recursion.pdf">Burg's algorithm</a> and you can find my source code <a href="https://github.com/dignissimus/acoustic-plane/blob/main/src/ar.zig">here</a>. I use <a href="https://github.com/bluealmost/zpoly">zpoly</a> for polynomial root-finding.</p>
       <p>I also wrote a Python program to create animated vowel formant plots and you can find that <a href="https://github.com/dignissimus/formant-plotter/">here</a></p>
-      <p>I used <a href="https://github.com/chdh/klatt-syn">Christian d'Heureuse's implementation</a> of <a href="https://en.wikipedia.org/wiki/Dennis_H._Klatt">Dennis Klatt</a>'s <a href="https://linguistics.berkeley.edu/plab/guestwiki/index.php?title=Klatt_Synthesizer">Klatt Synthesiser</a> to synthesise speech.</p>
+      <p>I used <a href="https://github.com/chdh/klatt-syn">Christian d'Heureuse's implementation</a> of <a href="https://en.wikipedia.org/wiki/Dennis_H._Klatt">Dennis Klatt</a>'s <a href="https://linguistics.berkeley.edu/plab/guestwiki/index.php?title=Klatt_Synthesizer">Klatt Synthesiser</a> to synthesise speech in the vowel sounds demonstration.</p>
       <p>I also wrote a game that uses formants and you can find it <a href="#">here</a>.</p>
   </section>
 
