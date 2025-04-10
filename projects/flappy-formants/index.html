@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Controlled Flappy Bird</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; }
+        canvas { display: block; }
+        #start-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        #plot { display: none; }
+    </style>
+</head>
+<body>
+    <button id="start-button" onclick="startGame()">Start Game</button>
+    <div id="plot"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+
+        const importObject = {
+            env: {
+                abort: function(msg, file, line, column) {
+                    console.error("Wasm Abort:", msg, file, line, column);
+                },
+            },
+            Math: Math
+        };
+        WebAssembly.instantiateStreaming(fetch("formant-finder.wasm"), importObject).then(x => {
+            window.ar = x;
+            window.burgs_method = x.instance.exports.burgs_method;
+        }).then(() => console.log("Formant finder loaded."));
+
+
+        const f1Buffer = [];
+        const f2Buffer = [];
+        window.averageF2 = 0;
+
+        const startVoice = async () => {
+            document.getElementById("start-button").style.display = "none";
+            document.getElementById("plot").style.display = "block";
+            const audioContext = new AudioContext();
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                echoCancellation: false,
+                noiseSuppresion: false,
+                channelCount: 1,
+                sampleRate: 44100,
+            });
+            const source = audioContext.createMediaStreamSource(stream);
+            await audioContext.audioWorklet.addModule('processor.js');
+            const workletNode = new AudioWorkletNode(audioContext, 'processor');
+            source.connect(workletNode);
+            workletNode.connect(audioContext.destination);
+
+            const ORDER = 50;
+            const MAX_DATA_SIZE = 88200;
+            const MAX_BUFFER = 20;
+
+            const data_ptr = ar.instance.exports.alloc(MAX_DATA_SIZE);
+            const coefficients_ptr = ar.instance.exports.alloc(ORDER);
+            const formants_ptr = ar.instance.exports.alloc(2);
+
+            workletNode.port.onmessage = (event) => {
+                if (rms(event.data) < 0.01) return;
+                data_size = Math.min(MAX_DATA_SIZE, event.data.length)
+
+                const data = new Float32Array(ar.instance.exports.memory.buffer, data_ptr, data_size);
+                const formants = new Float32Array(ar.instance.exports.memory.buffer, formants_ptr, 2);
+                for (i = 0; i < data_size; ++i) {
+                    data[i] = event.data[i];
+                }
+
+                for (let i = 0; i < data.length; i++) {
+                    const w = 0.54 - 0.46 * Math.cos((2 * Math.PI * i) / (data.length - 1));
+                    data[i] *= w;
+                }
+
+                burgs_method(data_ptr, coefficients_ptr, formants_ptr, data_size, ORDER);
+
+                const f1 = Math.round(formants[0]);
+                const f2 = Math.round(formants[1]);
+                if (isFinite(f1) || isFinite(f2)) {
+                    f1Buffer.push(f1);
+                    f2Buffer.push(f2);
+                }
+                if (f1Buffer.length > MAX_BUFFER) f1Buffer.shift();
+                if (f2Buffer.length > MAX_BUFFER) f2Buffer.shift();
+
+                const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+                const averageF1 = avg(f1Buffer);
+                window.averageF2 = avg(f2Buffer);
+            };
+        }
+
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        let gameStarted = false;
+        let bird;
+        let pipes = [];
+        let score = 0;
+        let gameInterval;
+        const gravity = 0.2;
+        const flapStrength = -6;
+        const pipeWidth = 50;
+        const pipeGap = 150;
+        let lastPipeTime = 0;
+        const pipeFrequency = 5000;
+
+        function resetGame() {
+            bird = {
+                x: 50,
+                y: canvas.height / 2,
+                radius: 20,
+                velocity: 0,
+            };
+            pipes = [];
+            score = 0;
+        }
+
+        function drawBird() {
+            ctx.fillStyle = "yellow";
+            ctx.beginPath();
+            ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawPipes() {
+            ctx.fillStyle = "green";
+            for (let i = 0; i < pipes.length; i++) {
+                const pipe = pipes[i];
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+                ctx.fillRect(pipe.x, pipe.topHeight + pipeGap, pipeWidth, canvas.height - pipe.topHeight - pipeGap);
+            }
+        }
+
+        function addPipe() {
+            const topHeight = Math.random() * (canvas.height - pipeGap - 100) + 50;
+            pipes.push({
+                x: canvas.width,
+                topHeight: topHeight,
+                passed: false,
+            });
+            lastPipeTime = Date.now();
+        }
+
+        function updatePipes() {
+            for (let i = 0; i < pipes.length; i++) {
+                pipes[i].x -= 2;
+                if (!pipes[i].passed && pipes[i].x + pipeWidth < bird.x) {
+                    score++;
+                    pipes[i].passed = true;
+                }
+            }
+            pipes = pipes.filter(pipe => pipe.x > -pipeWidth);
+
+            if (Date.now() - lastPipeTime > pipeFrequency) {
+                addPipe();
+            }
+        }
+
+        function checkCollision() {
+            if (bird.y + bird.radius > canvas.height || bird.y - bird.radius < 0) {
+                return true;
+            }
+
+            for (let i = 0; i < pipes.length; i++) {
+                const pipe = pipes[i];
+                if (bird.x + bird.radius > pipe.x && bird.x - bird.radius < pipe.x + pipeWidth) {
+                    if (bird.y - bird.radius < pipe.topHeight || bird.y + bird.radius > pipe.topHeight + pipeGap) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function drawScore() {
+            ctx.fillStyle = "black";
+            ctx.font = "24px sans-serif";
+            ctx.fillText(`Score: ${score}. F2: ${window.averageF2}`, 20, 30);
+        }
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            ctx.fillStyle = "red";
+            ctx.font = "48px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("Game Over!", canvas.width / 2, canvas.height / 2);
+            ctx.textAlign = "start";
+            gameStarted = false;
+            document.getElementById("start-button").style.display = "block";
+        }
+        const clamp = (x, lo, hi) => Math.max(Math.min(x, hi), lo);
+        function updateGame() {
+            if (!gameStarted) return;
+
+            const flapThresholdHigh = 2000;
+            const flapThresholdLow = 1000;
+            const hi =  2300;
+            const lo = 400;
+            bird.y = canvas.height * (1 - (clamp(window.averageF2, lo, hi) - lo) / (hi - lo));
+            bird.y -= (hi - lo) / 2;
+            bird.y *= 0.9;
+            bird.y += (hi - lo) / 2 * 0.9;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPipes();
+            drawBird();
+            drawScore();
+            updatePipes();
+
+            if (checkCollision()) {
+                gameOver();
+            }
+        }
+
+        function startGame() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            resetGame();
+            startVoice();
+            gameStarted = true;
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(updateGame, 1000 / 60);
+        }
+
+        function rms(arr) {
+            let sum = 0;
+            for (let i = 0; i < arr.length; i++) {
+                sum += arr[i] * arr[i];
+            }
+            return Math.sqrt(sum / arr.length);
+        }
+    </script>
+</body>
+</html>
