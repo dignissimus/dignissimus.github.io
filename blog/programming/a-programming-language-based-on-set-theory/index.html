@@ -56,47 +56,49 @@ because I’ve never written a Racket program before.
 I’ve defined a <code>many</code> combinator, a <code>any-of</code>
 combinator and a <code>leading-whitespace</code> combinator.
    </p>
-   <pre class="racket"><code>#lang racket
-
-(struct parse-result (parsed remaining))
-
-(define (consume-whitespace str) 0
-  (if (char-whitespace? (string-ref str 0))
-    (consume-whitespace (substring str 1)) str))
-
-(define (parse-fail str) (parse-result 'nothing str))
-(define no-parse (parse-fail 'no-parse))
-(define (parse-nothing str) (parse-result (list) str))
- 
-(define (many parser)
-  (lambda (str)
-    (define result (parser str))
-    (match result
-      [(parse-result 'nothing remaining) (parse-nothing remaining)]
-      [(parse-result parsed remaining) 
-        (define next-result ((many parser) remaining))
-        (match next-result
-          [(parse-result parsed_ remaining_) (parse-result (cons parsed parsed_) remaining_)])])))
- 
-(define (parse-result-monoid-append left right)
-  (match left [(parse-result 'nothing _) right] [else left]))
- 
-(define (apply-to x) (lambda (f) (f x)))
- 
-(define (any-of . parsers)
-  (lambda (str)
-    (foldl parse-result-monoid-append no-parse (map (apply-to str) parsers))))
- 
-(define (variable-assignment str) (parse-fail str))
- 
-(define top-level-statement (any-of variable-assignment))
-
-(define (leading-whitespace parser)
-  (lambda (str)
-    (define str_ (consume-whitespace str))
-    (parser str_)))
-
-(define parse-program (leading-whitespace (many top-level-statement)))</code></pre>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode racket"><code class="sourceCode racket"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#lang racket</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> parse-result <span class="op">(</span>parsed remaining<span class="op">))</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>consume-whitespace str<span class="op">)</span> <span class="dv">0</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">if</span> <span class="op">(</span><span class="kw">char-whitespace?</span> <span class="op">(</span><span class="kw">string-ref</span> str <span class="dv">0</span><span class="op">))</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>consume-whitespace <span class="op">(</span><span class="kw">substring</span> str <span class="dv">1</span><span class="op">))</span> str<span class="op">))</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-fail str<span class="op">)</span> <span class="op">(</span>parse-result 'nothing str<span class="op">))</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> no-parse </span><span class="op">(</span>parse-fail 'no-parse<span class="op">))</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-nothing str<span class="op">)</span> <span class="op">(</span>parse-result <span class="op">(</span><span class="kw">list</span><span class="op">)</span> str<span class="op">))</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>many parser<span class="op">)</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> result </span><span class="op">(</span>parser str<span class="op">))</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>match result</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span>parse-result 'nothing remaining<span class="op">)</span> <span class="op">(</span>parse-nothing remaining<span class="op">)]</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span>parse-result parsed remaining<span class="op">)</span> </span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span><span class="ex">define</span><span class="fu"> next-result </span><span class="op">((</span>many parser<span class="op">)</span> remaining<span class="op">))</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span>match next-result</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>          <span class="op">[(</span>parse-result parsed_ remaining_<span class="op">)</span> <span class="op">(</span>parse-result <span class="op">(</span><span class="kw">cons</span> parsed parsed_<span class="op">)</span> remaining_<span class="op">)])])))</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-result-monoid-append left right<span class="op">)</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>match left <span class="op">[(</span>parse-result 'nothing <span class="op">_)</span> right<span class="op">]</span> <span class="op">[</span><span class="kw">else</span> left<span class="op">]))</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>apply-to x<span class="op">)</span> <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>f<span class="op">)</span> <span class="op">(</span>f x<span class="op">)))</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>any-of . parsers<span class="op">)</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>foldl parse-result-monoid-append no-parse <span class="op">(</span><span class="kw">map</span> <span class="op">(</span>apply-to str<span class="op">)</span> parsers<span class="op">))))</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>variable-assignment str<span class="op">)</span> <span class="op">(</span>parse-fail str<span class="op">))</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> top-level-statement </span><span class="op">(</span>any-of variable-assignment<span class="op">))</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>leading-whitespace parser<span class="op">)</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> str_ </span><span class="op">(</span>consume-whitespace str<span class="op">))</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>parser str_<span class="op">)))</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-program </span><span class="op">(</span>leading-whitespace <span class="op">(</span>many top-level-statement<span class="op">)))</span></span></code></pre>
+   </div>
    <h1>
     05:45
    </h1>
@@ -105,9 +107,11 @@ combinator and a <code>leading-whitespace</code> combinator.
 beginning to become tired. Alongside some other important bits, I’ve
 written the parser for variable assignment, it looks like this.
    </p>
-   <pre class="racket"><code>(define (variable-assignment str)
-  (chain '(read-identifier read-equals read-expression)
-    (lambda (identifier equals expression) (variable-assignment-data identifier expression))))</code></pre>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode racket"><code class="sourceCode racket"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>variable-assignment str<span class="op">)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>chain '<span class="op">(</span>read-identifier read-equals read-expression<span class="op">)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>identifier equals expression<span class="op">)</span> <span class="op">(</span>variable-assignment-data identifier expression<span class="op">))))</span></span></code></pre>
+   </div>
    <h1>
     The end
    </h1>
@@ -117,166 +121,168 @@ still have some fun ideas for a set-theory based programming language so
 I hope I get time to come back to this soon. I list the program as I
 left it back in April.
    </p>
-   <pre class="racket"><code>#lang racket
-
-(provide (all-defined-out))
-
-(struct program-state () #:inspector #f)
-(struct symbol (identifier) #:inspector #f)
-(struct identifier (name) #:inspector #f)
-(struct function-definition (identifier parameters expression) #:inspector #f)
-(struct parse-result (parsed remaining) #:inspector #f)
-(struct variable-assignment (identifier expression) #:inspector #f)
-(struct unary-operation (operator expression) #:inspector #f)
-(struct binary-operation (left operator right) #:inspector #f)
-(struct match-expression (pattern expression) #:inspector #f)
-
-(define (consume-whitespace str)
-  (match str
-    ["" ""]
-    [else (if (char-whitespace? (string-ref str 0))
-      (consume-whitespace (substring str 1)) str)]))
-
-(define (parse-fail str) (parse-result 'nothing str))
-(define no-parse (parse-fail 'no-parse))
-(define (parse-nothing str) (parse-result (list) str))
-
-(define (many parser)
-  (lambda (str)
-    (define result (parser str))
-    (match result
-      [(parse-result 'nothing remaining) (parse-nothing str)]
-      [(parse-result parsed remaining) 
-        (define next-result ((many parser) remaining))
-        (match next-result
-          [(parse-result 'nothing _) (parse-result (list parsed) remaining)]
-          [(parse-result parsed_ remaining_) (parse-result (cons parsed parsed_) remaining_)])])))
-
-(define (many1 parser)
-  (lambda (str)
-    (define result ((many parser) str))
-    (match result
-      [(parse-result '() _) no-parse]
-      [(parse-result _ _) result])))
-
-(define (parse-result-monoid-append left right)
-  (match left [(parse-result 'nothing _) right] [else left]))
-
-(define (apply-to x) (lambda (f) (f x)))
-
-(define (any-of . parsers)
-  (lambda (str)
-    (foldl parse-result-monoid-append no-parse (map (apply-to str) parsers))))
-
-(define (combine parsers)
-  (lambda (str)
-    (match parsers
-      ['() (parse-nothing str)]
-      [(cons p ps)
-        (define result (p str))
-        (match result
-          [(parse-result 'nothing _) no-parse]
-          [(parse-result parsed remaining)
-            (define result_ ((combine ps) remaining))
-            (match result_
-              [(parse-result 'nothing _) no-parse]
-              [(parse-result parsed_ remaining_) (parse-result (cons parsed parsed_) remaining_)])])])))
-
-(define (chain parsers f)
-  (lambda (str)
-    (define result ((combine parsers) str))
-    (match result
-      [(parse-result 'nothing _) no-parse]
-      [(parse-result parsed remaining)
-       (parse-result (apply f parsed) remaining)])))
-
-(define (parse-string literal)
-  (lambda (str)
-    (if (string-prefix? str literal)
-      (parse-result literal (substring str (string-length literal))) no-parse)))
-
-(define parse-character (compose parse-string string))
-
-(define alphanum (apply any-of (map parse-character (string-&gt;list "abcdefghijklmnopqrstuvwxyz0123456789"))))
-(define parse-identifier (many1 alphanum))
-(define parse-symbol (combine (list (parse-string "'") (many1 alphanum))))
-(define parse-equals (parse-string "="))
-(define (leading-whitespace parser)
-  (lambda (str)
-    (define str_ (consume-whitespace str))
-    (parser str_)))
-(define parse-string-leading-whitespace (compose leading-whitespace parse-string))
-(define (parse-set-body str) 
-  (define parser_ (many (leading-whitespace parse-expression)))
-  (parser_ str))
-(define parse-set
-  (chain (list (parse-string-leading-whitespace "{") parse-set-body (parse-string-leading-whitespace "}"))
-      (lambda (lb set-body rb) set-body)))
-(define bracketed-expression
-  (lambda (str)
-    (define parser
-      (chain (list (parse-string "(") parse-expression (parse-string ")"))
-        (lambda (lb expression rb) expression)))
-    (parser str)))
-
-(define (parse-any-string . strings) (apply any-of (map parse-string strings)))
-(define parse-unary-operator-symbol (parse-any-string "supremum"))
-(define parse-binary-operator-symbol (parse-any-string "\\" "union"))
-(define parse-unary-operator
-  (lambda (str)
-    (define parser (chain (list parse-unary-operator-symbol parse-expression) unary-operation))
-    (parser str)))
-(define parse-binary-operator
-  (lambda (str)
-    (define parser
-      (chain
-        (list (parse-string-leading-whitespace "(") parse-expression (leading-whitespace parse-binary-operator-symbol) parse-expression (parse-string-leading-whitespace ")"))
-        (lambda (lb left operator right rb) binary-operation left operator right)))
-    (parser str)))
-
-(define parse-match-expression
-  (lambda (str)
-    (define parser
-      (chain (list
-          (parse-string "match") (leading-whitespace parse-expression)
-          (parse-string-leading-whitespace "{")
-          (leading-whitespace match-expression-body)
-          (parse-string-leading-whitespace "}"))
-        (lambda (match expression lb body rb) (match-expression expression body))))
-    (parser str)))
-
-(define parse-expression
-  (any-of bracketed-expression parse-binary-operator
-          parse-match-expression parse-unary-operator
-          parse-identifier parse-symbol parse-set))
-
-(define parse-match-expression-pattern parse-set)
-(define match-expression-case
-  (chain (list
-           parse-match-expression-pattern
-           (parse-string-leading-whitespace "=&gt;")
-           (leading-whitespace parse-expression))
-    (lambda (pattern arrow expression) (match-expression pattern expression))))
-(define match-expression-body (many (leading-whitespace match-expression-case)))
-
-(define parse-variable-assignment
-  (chain (list parse-identifier (leading-whitespace parse-equals) (leading-whitespace parse-expression))
-    (lambda (identifier equals expression) (variable-assignment (string-join identifier "") expression))))
-
-(define parse-function-definition
-  (chain
-    (list
-      (parse-string "def ") parse-identifier
-      (parse-string-leading-whitespace "(") (many (leading-whitespace parse-identifier)) (parse-string-leading-whitespace ")")
-      (parse-string-leading-whitespace "=") (leading-whitespace parse-expression))
-    (lambda (def name lb parameters rb eq expression) (function-definition name parameters expression))))
-
-(define empty-state (program-state))
-(define (evaluation-step state program) state)
-(define (evaluate-program stream) (foldl evaluation-step empty-state stream))
-
-(define top-level-statement (leading-whitespace (any-of parse-variable-assignment parse-function-definition)))
-(define parse-program (many top-level-statement))</code></pre>
+   <div class="sourceCode" id="cb3">
+    <pre class="sourceCode racket"><code class="sourceCode racket"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#lang racket</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">provide</span> <span class="op">(</span>all-defined-out<span class="op">))</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> program-state <span class="op">()</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> symbol <span class="op">(</span>identifier<span class="op">)</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> identifier <span class="op">(</span>name<span class="op">)</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> function-definition <span class="op">(</span>identifier parameters expression<span class="op">)</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> parse-result <span class="op">(</span>parsed remaining<span class="op">)</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> variable-assignment <span class="op">(</span>identifier expression<span class="op">)</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> unary-operation <span class="op">(</span>operator expression<span class="op">)</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> binary-operation <span class="op">(</span>left operator right<span class="op">)</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="kw">struct</span> match-expression <span class="op">(</span>pattern expression<span class="op">)</span> #:inspector <span class="dv">#f</span><span class="op">)</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>consume-whitespace str<span class="op">)</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>match str</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">[</span><span class="st">""</span> <span class="st">""</span><span class="op">]</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">[</span><span class="kw">else</span> <span class="op">(</span><span class="kw">if</span> <span class="op">(</span><span class="kw">char-whitespace?</span> <span class="op">(</span><span class="kw">string-ref</span> str <span class="dv">0</span><span class="op">))</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span>consume-whitespace <span class="op">(</span><span class="kw">substring</span> str <span class="dv">1</span><span class="op">))</span> str<span class="op">)]))</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-fail str<span class="op">)</span> <span class="op">(</span>parse-result 'nothing str<span class="op">))</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> no-parse </span><span class="op">(</span>parse-fail 'no-parse<span class="op">))</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-nothing str<span class="op">)</span> <span class="op">(</span>parse-result <span class="op">(</span><span class="kw">list</span><span class="op">)</span> str<span class="op">))</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>many parser<span class="op">)</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> result </span><span class="op">(</span>parser str<span class="op">))</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>match result</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span>parse-result 'nothing remaining<span class="op">)</span> <span class="op">(</span>parse-nothing str<span class="op">)]</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span>parse-result parsed remaining<span class="op">)</span> </span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span><span class="ex">define</span><span class="fu"> next-result </span><span class="op">((</span>many parser<span class="op">)</span> remaining<span class="op">))</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span>match next-result</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>          <span class="op">[(</span>parse-result 'nothing <span class="op">_)</span> <span class="op">(</span>parse-result <span class="op">(</span><span class="kw">list</span> parsed<span class="op">)</span> remaining<span class="op">)]</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>          <span class="op">[(</span>parse-result parsed_ remaining_<span class="op">)</span> <span class="op">(</span>parse-result <span class="op">(</span><span class="kw">cons</span> parsed parsed_<span class="op">)</span> remaining_<span class="op">)])])))</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>many1 parser<span class="op">)</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> result </span><span class="op">((</span>many parser<span class="op">)</span> str<span class="op">))</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>match result</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span>parse-result '<span class="op">()</span> <span class="op">_)</span> no-parse<span class="op">]</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span>parse-result <span class="op">_</span> <span class="op">_)</span> result<span class="op">])))</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-result-monoid-append left right<span class="op">)</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>match left <span class="op">[(</span>parse-result 'nothing <span class="op">_)</span> right<span class="op">]</span> <span class="op">[</span><span class="kw">else</span> left<span class="op">]))</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>apply-to x<span class="op">)</span> <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>f<span class="op">)</span> <span class="op">(</span>f x<span class="op">)))</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>any-of . parsers<span class="op">)</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>foldl parse-result-monoid-append no-parse <span class="op">(</span><span class="kw">map</span> <span class="op">(</span>apply-to str<span class="op">)</span> parsers<span class="op">))))</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>combine parsers<span class="op">)</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>match parsers</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>      <span class="op">[</span>'<span class="op">()</span> <span class="op">(</span>parse-nothing str<span class="op">)]</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span><span class="kw">cons</span> p ps<span class="op">)</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span><span class="ex">define</span><span class="fu"> result </span><span class="op">(</span>p str<span class="op">))</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span>match result</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>          <span class="op">[(</span>parse-result 'nothing <span class="op">_)</span> no-parse<span class="op">]</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>          <span class="op">[(</span>parse-result parsed remaining<span class="op">)</span></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>            <span class="op">(</span><span class="ex">define</span><span class="fu"> result_ </span><span class="op">((</span>combine ps<span class="op">)</span> remaining<span class="op">))</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>            <span class="op">(</span>match result_</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>              <span class="op">[(</span>parse-result 'nothing <span class="op">_)</span> no-parse<span class="op">]</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>              <span class="op">[(</span>parse-result parsed_ remaining_<span class="op">)</span> <span class="op">(</span>parse-result <span class="op">(</span><span class="kw">cons</span> parsed parsed_<span class="op">)</span> remaining_<span class="op">)])])])))</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>chain parsers f<span class="op">)</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> result </span><span class="op">((</span>combine parsers<span class="op">)</span> str<span class="op">))</span></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>match result</span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span>parse-result 'nothing <span class="op">_)</span> no-parse<span class="op">]</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>      <span class="op">[(</span>parse-result parsed remaining<span class="op">)</span></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>       <span class="op">(</span>parse-result <span class="op">(</span><span class="kw">apply</span> f parsed<span class="op">)</span> remaining<span class="op">)])))</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-string literal<span class="op">)</span></span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="kw">if</span> <span class="op">(</span>string-prefix? str literal<span class="op">)</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span>parse-result literal <span class="op">(</span><span class="kw">substring</span> str <span class="op">(</span><span class="kw">string-length</span> literal<span class="op">)))</span> no-parse<span class="op">)))</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-character </span><span class="op">(</span>compose parse-string <span class="kw">string</span><span class="op">))</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> alphanum </span><span class="op">(</span><span class="kw">apply</span> any-of <span class="op">(</span><span class="kw">map</span> parse-character <span class="op">(</span><span class="kw">string-&gt;list</span> <span class="st">"abcdefghijklmnopqrstuvwxyz0123456789"</span><span class="op">))))</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-identifier </span><span class="op">(</span>many1 alphanum<span class="op">))</span></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-symbol </span><span class="op">(</span>combine <span class="op">(</span><span class="kw">list</span> <span class="op">(</span>parse-string <span class="st">"'"</span><span class="op">)</span> <span class="op">(</span>many1 alphanum<span class="op">))))</span></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-equals </span><span class="op">(</span>parse-string <span class="st">"="</span><span class="op">))</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>leading-whitespace parser<span class="op">)</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> str_ </span><span class="op">(</span>consume-whitespace str<span class="op">))</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>parser str_<span class="op">)))</span></span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-string-leading-whitespace </span><span class="op">(</span>compose leading-whitespace parse-string<span class="op">))</span></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-set-body str<span class="op">)</span> </span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="ex">define</span><span class="fu"> parser_ </span><span class="op">(</span>many <span class="op">(</span>leading-whitespace parse-expression<span class="op">)))</span></span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>parser_ str<span class="op">))</span></span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-set</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>chain <span class="op">(</span><span class="kw">list</span> <span class="op">(</span>parse-string-leading-whitespace <span class="st">"{"</span><span class="op">)</span> parse-set-body <span class="op">(</span>parse-string-leading-whitespace <span class="st">"}"</span><span class="op">))</span></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>lb set-body rb<span class="op">)</span> set-body<span class="op">)))</span></span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> bracketed-expression</span></span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> parser</span></span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span>chain <span class="op">(</span><span class="kw">list</span> <span class="op">(</span>parse-string <span class="st">"("</span><span class="op">)</span> parse-expression <span class="op">(</span>parse-string <span class="st">")"</span><span class="op">))</span></span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>lb expression rb<span class="op">)</span> expression<span class="op">)))</span></span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>parser str<span class="op">)))</span></span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>parse-any-string . strings<span class="op">)</span> <span class="op">(</span><span class="kw">apply</span> any-of <span class="op">(</span><span class="kw">map</span> parse-string strings<span class="op">)))</span></span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-unary-operator-symbol </span><span class="op">(</span>parse-any-string <span class="st">"supremum"</span><span class="op">))</span></span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-binary-operator-symbol </span><span class="op">(</span>parse-any-string <span class="st">"</span><span class="ch">\\</span><span class="st">"</span> <span class="st">"union"</span><span class="op">))</span></span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-unary-operator</span></span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> parser </span><span class="op">(</span>chain <span class="op">(</span><span class="kw">list</span> parse-unary-operator-symbol parse-expression<span class="op">)</span> unary-operation<span class="op">))</span></span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>parser str<span class="op">)))</span></span>
+<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-binary-operator</span></span>
+<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> parser</span></span>
+<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span>chain</span>
+<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span><span class="kw">list</span> <span class="op">(</span>parse-string-leading-whitespace <span class="st">"("</span><span class="op">)</span> parse-expression <span class="op">(</span>leading-whitespace parse-binary-operator-symbol<span class="op">)</span> parse-expression <span class="op">(</span>parse-string-leading-whitespace <span class="st">")"</span><span class="op">))</span></span>
+<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>lb left operator right rb<span class="op">)</span> binary-operation left operator right<span class="op">)))</span></span>
+<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>parser str<span class="op">)))</span></span>
+<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-match-expression</span></span>
+<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>str<span class="op">)</span></span>
+<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="ex">define</span><span class="fu"> parser</span></span>
+<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span>chain <span class="op">(</span><span class="kw">list</span></span>
+<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>          <span class="op">(</span>parse-string <span class="st">"match"</span><span class="op">)</span> <span class="op">(</span>leading-whitespace parse-expression<span class="op">)</span></span>
+<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a>          <span class="op">(</span>parse-string-leading-whitespace <span class="st">"{"</span><span class="op">)</span></span>
+<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a>          <span class="op">(</span>leading-whitespace match-expression-body<span class="op">)</span></span>
+<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a>          <span class="op">(</span>parse-string-leading-whitespace <span class="st">"}"</span><span class="op">))</span></span>
+<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a>        <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>match expression lb body rb<span class="op">)</span> <span class="op">(</span>match-expression expression body<span class="op">))))</span></span>
+<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>parser str<span class="op">)))</span></span>
+<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-expression</span></span>
+<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>any-of bracketed-expression parse-binary-operator</span>
+<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a>          parse-match-expression parse-unary-operator</span>
+<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a>          parse-identifier parse-symbol parse-set<span class="op">))</span></span>
+<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-match-expression-pattern </span>parse-set<span class="op">)</span></span>
+<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> match-expression-case</span></span>
+<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>chain <span class="op">(</span><span class="kw">list</span></span>
+<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>           parse-match-expression-pattern</span>
+<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span>parse-string-leading-whitespace <span class="st">"=&gt;"</span><span class="op">)</span></span>
+<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span>leading-whitespace parse-expression<span class="op">))</span></span>
+<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>pattern arrow expression<span class="op">)</span> <span class="op">(</span>match-expression pattern expression<span class="op">))))</span></span>
+<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> match-expression-body </span><span class="op">(</span>many <span class="op">(</span>leading-whitespace match-expression-case<span class="op">)))</span></span>
+<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-variable-assignment</span></span>
+<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>chain <span class="op">(</span><span class="kw">list</span> parse-identifier <span class="op">(</span>leading-whitespace parse-equals<span class="op">)</span> <span class="op">(</span>leading-whitespace parse-expression<span class="op">))</span></span>
+<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>identifier equals expression<span class="op">)</span> <span class="op">(</span>variable-assignment <span class="op">(</span>string-join identifier <span class="st">""</span><span class="op">)</span> expression<span class="op">))))</span></span>
+<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-function-definition</span></span>
+<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span>chain</span>
+<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="kw">list</span></span>
+<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span>parse-string <span class="st">"def "</span><span class="op">)</span> parse-identifier</span>
+<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span>parse-string-leading-whitespace <span class="st">"("</span><span class="op">)</span> <span class="op">(</span>many <span class="op">(</span>leading-whitespace parse-identifier<span class="op">))</span> <span class="op">(</span>parse-string-leading-whitespace <span class="st">")"</span><span class="op">)</span></span>
+<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a>      <span class="op">(</span>parse-string-leading-whitespace <span class="st">"="</span><span class="op">)</span> <span class="op">(</span>leading-whitespace parse-expression<span class="op">))</span></span>
+<span id="cb3-153"><a href="#cb3-153" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="kw">lambda</span> <span class="op">(</span>def name lb parameters rb eq expression<span class="op">)</span> <span class="op">(</span>function-definition name parameters expression<span class="op">))))</span></span>
+<span id="cb3-154"><a href="#cb3-154" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-155"><a href="#cb3-155" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> empty-state </span><span class="op">(</span>program-state<span class="op">))</span></span>
+<span id="cb3-156"><a href="#cb3-156" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>evaluation-step state program<span class="op">)</span> state<span class="op">)</span></span>
+<span id="cb3-157"><a href="#cb3-157" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> </span><span class="op">(</span>evaluate-program stream<span class="op">)</span> <span class="op">(</span>foldl evaluation-step empty-state stream<span class="op">))</span></span>
+<span id="cb3-158"><a href="#cb3-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-159"><a href="#cb3-159" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> top-level-statement </span><span class="op">(</span>leading-whitespace <span class="op">(</span>any-of parse-variable-assignment parse-function-definition<span class="op">)))</span></span>
+<span id="cb3-160"><a href="#cb3-160" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="ex">define</span><span class="fu"> parse-program </span><span class="op">(</span>many top-level-statement<span class="op">))</span></span></code></pre>
+   </div>
   </main>
  </body>
 </html>
