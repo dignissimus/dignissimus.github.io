@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/lean.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/r.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Using the DKW inequality to generate a confidence interval for the
+CDF
+   </h1>
+   <p>
+    <strong>27 July 2025</strong>
+   </p>
+   <hr>
+   <p>
+    My textbook gave me the exercise of generating 100 observations from
+a normal \(\mathcal{N}(0, 1)\) distribution then computing the 95%
+confidence bands for the cdf given these observations then to repeat the
+experiment for the cauchy distribution.
+   </p>
+   <p>
+    I did this by using the empirical CDF and the DKW inequality which
+was introduced earlier in the text.
+   </p>
+   <p>
+    The empirical CDF is an approximation for the CDF that assigns equal
+probability weight to each interval between the points in a dataset and
+the DKW inequality bounds how far the ecdf deviates from the true
+distribution.
+   </p>
+   <p>
+    The DKW inequality states that if \(\hat{F}_n\) is an ecdf from a
+distribution with CDF \(F\) then
+   </p>
+   <p>
+    \[ P\left(\sup_x \left| F\left(x\right) - \hat{F}\left(x\right)
+\right| &gt; \epsilon\right) \leq 2e^{-2n\epsilon^2} \]
+   </p>
+   <p>
+    The statement is simple and applying it is pretty easy but the proof
+was left out of the textbook, I have no idea how to prove it and the
+proof looks difficult and a lot of effort [2] so I’m happy to take it as
+given.
+   </p>
+   <p>
+    Since I need the probability of the confidence interval containing
+the CDF to be larger than 95% I need the error probability to be less
+than 5% and \(2e^{-2n\epsilon^2}\) must be less than 0.05. This gives me
+freedom to choose any \(\epsilon\) that is larger than
+\(\sqrt{\frac{-\log\left(\frac{0.05}{2}\right)}{2n}}\).
+   </p>
+   <p>
+    My R code looks like this
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>total_experiments <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sample_size <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>run_experiment <span class="ot">&lt;-</span> <span class="cf">function</span> (r, p, distribution_name) {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  works <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>total_experiments) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    xs <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">r</span>(sample_size))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    real <span class="ot">&lt;-</span> <span class="fu">p</span>(xs)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    ecdf_values <span class="ot">&lt;-</span> <span class="fu">ecdf</span>(xs)(xs)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    epsilon <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="sc">-</span><span class="fu">log</span>(alpha <span class="sc">/</span> <span class="dv">2</span>) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> sample_size))</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    lower <span class="ot">&lt;-</span> <span class="fu">pmax</span>(ecdf_values <span class="sc">-</span> epsilon, <span class="dv">0</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    upper <span class="ot">&lt;-</span> <span class="fu">pmin</span>(ecdf_values <span class="sc">+</span> epsilon, <span class="dv">1</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">all</span>(lower <span class="sc">&lt;=</span> real) <span class="sc">&amp;&amp;</span> <span class="fu">all</span>(real <span class="sc">&lt;=</span> upper)){</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>      works <span class="ot">&lt;-</span> works <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">paste</span>(</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>      <span class="st">"The normal interval contains our "</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>      distribution_name,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>      <span class="st">" distribution: "</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>      <span class="dv">100</span> <span class="sc">*</span>  works <span class="sc">/</span> total_experiments,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>      <span class="st">"% of the time"</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="fu">run_experiment</span>(rnorm, pnorm, <span class="st">"Normal"</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="fu">run_experiment</span>(rcauchy, pcauchy, <span class="st">"Cauchy"</span>)</span></code></pre>
+   </div>
+   <p>
+    Here are my graphs from an example experiment
+   </p>
+   <p>
+    <img src="/blog/images/dkw-ecdf/Normal.png"> <img src="/blog/images/dkw-ecdf/Cauchy.png">
+   </p>
+   <h1>
+    References
+   </h1>
+   <p>
+    [1]: Wasserman, Larry. All of statistics: a concise course in
+statistical inference. Springer Science &amp; Business Media, 2004.
+   </p>
+   <p>
+    [2]: Reeve, Henry WJ. “A short proof of the
+Dvoretzky–Kiefer–Wolfowitz–Massart inequality.” arXiv preprint
+arXiv:2403.16651 (2024).
+   </p>
+  </main>
+ </body>
+</html>
