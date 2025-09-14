@@ -196,7 +196,7 @@ bits is a 1. In SystemVerilog we can test this using
 <span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
 <span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  <span class="kw">endgenerate</span></span>
 <span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>  <span class="kw">assign</span> <span class="ot">sum</span> = a ^ b ^ carry;</span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>  <span class="kw">assign</span> cout = carry[BITS - <span class="dv">1</span>];</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>  <span class="kw">assign</span> cout = a[BITS - <span class="dv">1</span>] &amp; b[BITS - <span class="dv">1</span>] | carry[BITS - <span class="dv">1</span>] &amp; a[BITS - <span class="dv">1</span>] | carry[BITS - <span class="dv">1</span>] &amp; b[BITS - <span class="dv">1</span>];</span>
 <span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre>
    </div>
    <p>
