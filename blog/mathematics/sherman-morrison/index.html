@@ -51,8 +51,8 @@ after updating some of its values.
 multiplications and finding the matrix inverse. Practically speaking,
 multiplying and inverting square matrices typically takes us on the
 order of \(n^3\) arithmetic operations and multiplying an \(m \times n\)
-matrix with an \(n \times p\) matrix will typically take us \(O(mnp +
-mp^2)\) operations.
+matrix with an \(n \times p\) matrix will typically take us \(O(mnp)\)
+operations.
    </p>
    <p>
     If we wanted to fit a simple linear regression model with one
@@ -66,9 +66,9 @@ variable.
    <p>
     If we wanted to find the OLS estimate for \(\hat{y} = \beta X^\top\)
 then solving for \(\beta = (X^{\top}X)^{-1}X^{\top}y\) would take on the
-order of \(n\) arithmetic operations for this simple linear regression
-example. But what if we had time-series data and wanted to fit a rolling
-regression with a window size of \(r\)?
+order of \(O(nk^2 + k^3) = O(n)\) arithmetic operations for this simple
+linear regression example. But what if we had time-series data and
+wanted to fit a rolling regression with a window size of \(r\)?
    </p>
    <p>
     If we do this naively by fitting \(n - r\) regressions where \(r \ll
