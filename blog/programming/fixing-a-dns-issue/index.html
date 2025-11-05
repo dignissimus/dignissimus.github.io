@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/lean.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/r.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Fixing a DHCP issue
+   </h1>
+   <p>
+    <strong>5th November 2025</strong>
+   </p>
+   <hr>
+   <p>
+    A couple of weeks ago I was having network issues which left me
+unable to use any applications that required internet access. This was a
+problem for me since I wanted to ssh into one of my university’s compute
+clusters. These are my notes from when I tried to fix the issue.
+   </p>
+   <p>
+    I first tried pinging google.com to see if I could reach it.
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">08:45:58</span> sam@localhost ~ → ping google.com</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ping:</span> google.com: Temporary failure in name resolution</span></code></pre>
+   </div>
+   <p>
+    This failed due to a “name resolution” failure which meant that Which
+makes sense since the culprit is <a href="https://itsfoss.community/t/its-always-dns-lol/10820">always
+DNS</a>. In order to access google.com, my laptop needs to work out what
+IP address to use which essentially tells it and the way it does this is
+through the DNS system which maps domain names like google.com to an IP
+address.
+   </p>
+   <p>
+    To work out what’s wrong with I ran <code>nslookup google.com</code>
+which just does the domain name to IP address translation by querying
+name servers.
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">08:46:01</span> sam@localhost ~ → nslookup google.com</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">;;</span> <span class="ex">communications</span> error to ::1#53: connection refused</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">;;</span> <span class="ex">communications</span> error to ::1#53: connection refused</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">;;</span> <span class="ex">communications</span> error to ::1#53: connection refused</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">;;</span> <span class="ex">communications</span> error to 127.0.0.1#53: connection refused</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">;;</span> <span class="ex">no</span> servers could be reached</span></code></pre>
+   </div>
+   <p>
+    The <code>nslookup</code> command failed which meant that it was
+unable to access the name server which it says is situated at
+<code>::1#53</code> and <code>127.0.0.1#53</code>. <code>::1</code> is
+the IPv6 version of <code>127.0.0.1</code> or loopback address which
+refers to services running on my laptop.
+   </p>
+   <p>
+    To check it was just a DNS issue I ran a ping to an IP address that I
+knew would give a response. I picked 8.8.8.8 which is one of the IP
+addresses for <a href="https://developers.google.com/speed/public-dns">Google Public
+DNS</a>.
+   </p>
+   <div class="sourceCode" id="cb3">
+    <pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">08:46:10</span> sam@localhost ~ → ping 8.8.8.8</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">PING</span> 8.8.8.8 <span class="er">(</span><span class="ex">8.8.8.8</span><span class="kw">)</span> <span class="ex">56</span><span class="er">(</span><span class="ex">84</span><span class="kw">)</span> <span class="ex">bytes</span> of data.</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">64</span> bytes from 8.8.8.8: icmp_seq=1 ttl=118 time=7.96 ms</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">64</span> bytes from 8.8.8.8: icmp_seq=2 ttl=118 time=6.72 ms</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">64</span> bytes from 8.8.8.8: icmp_seq=3 ttl=118 time=6.87 ms</span></code></pre>
+   </div>
+   <p>
+    I was able to successfully ping the IP so the problem is most likely
+DNS resolution.
+   </p>
+   <p>
+    Next I checked <code>/etc/resolv.conf</code> and for some reason it
+was empty?
+   </p>
+   <div class="sourceCode" id="cb4">
+    <pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> 08:46:20 sam@localhost ~ → cat /etc/resolv.conf</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">25</span> 08:46:31 sam@localhost ~ →</span></code></pre>
+   </div>
+   <p>
+    Since it wasn’t being generated I guessed it was an issue with DHCP
+which, among other things, gives a default DNS server for devices to
+used. I checked <code>/etc/sysconfig/network/config</code> but I’m not
+sure what I was looking for.
+   </p>
+   <div class="sourceCode" id="cb5">
+    <pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">01:31:56</span> sam@dhcp-10-247-31-187 ~ → sudo cat /etc/sysconfig/network/config</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">## Path:        Network/General</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">## Description: Global network configuration</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Note:</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Most of the options can and should be overridden by per-interface</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># settings in the ifcfg-* files.</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: The ISC dhclient started by the NetworkManager is not using any</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># of these options -- NetworkManager is not using any sysconfig settings.</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span></code></pre>
+   </div>
+   <p>
+    I then checked <code>/run/netconfig/resolv.conf</code> which contains
+the DNS servers that NetworkManager found. It was populated so I
+symlinked <code>/run/netconfig/resolv.conf</code> to
+<code>/etc/resolv.conf</code>
+   </p>
+   <p>
+    My notes end here so I think this fixed my issue.
+   </p>
+  </main>
+ </body>
+</html>
