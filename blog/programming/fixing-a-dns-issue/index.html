@@ -51,12 +51,11 @@ clusters. These are my notes from when I tried to fix the issue.
    <p>
     This failed due to a “name resolution” failure which meant that the
 ping command was unable to find an IP address for
-<code>google.com</code> using DNS. which makes sense since the culprit
-is <a href="https://itsfoss.community/t/its-always-dns-lol/10820">always
-DNS</a>. In order to access google.com, my laptop needs to work out what
-IP address to use which essentially tells it and the way it does this is
-through DNS which maps domain names like google.com to an IP
-address.
+<code>google.com</code> using DNS. which makes sense since <a href="https://itsfoss.community/t/its-always-dns-lol/10820">the culprit
+is always DNS</a>. In order to access google.com, my laptop needs to
+work out what IP address to use which essentially tells it and the way
+it does this is through DNS which maps domain names like google.com to
+an IP address.
    </p>
    <p>
     To work out what’s wrong with I ran <code>nslookup google.com</code>
