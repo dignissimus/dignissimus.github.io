@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/lean.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/r.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    Bad documentation
+   </h1>
+   <p>
+    I did <a href="https://adventofcode.com/2025/day/1">Advent of Code
+day one</a> in Fortran and found myself in want of a shift function.
+Fortunately for me, fortran offers the <a href="https://gcc.gnu.org/onlinedocs/gfortran/CSHIFT.html">CSHIFT</a>
+function which does what I want.
+   </p>
+   <p>
+    Here is the documentation
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode fortran"><code class="sourceCode fortranfixed"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Synopsis:</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">RESULT</span> <span class="kw">=</span> <span class="fu">CSHIFT</span>(ARRAY, SHIFT <span class="kw">[</span>, <span class="bu">DIM</span><span class="kw">]</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>Description:</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">CSHIFT</span>(ARRAY, SHIFT <span class="kw">[</span>, <span class="bu">DIM</span><span class="kw">]</span>) performs a circular shift on elements of ARRAY along the <span class="dt">dimension</span> of <span class="bu">DIM</span>. <span class="kw">If</span> <span class="bu">DIM</span> is omitted it is taken <span class="kw">to</span> be <span class="fl">1.</span> <span class="bu">DIM</span> is a scalar of <span class="dt">type</span> <span class="dt">INTEGER</span> in the <span class="fu">range</span> of <span class="dv">1</span> \leq <span class="bu">DIM</span> \leq n) <span class="kw">where</span> n is the rank of ARRAY. <span class="kw">If</span> the rank of ARRAY is one, <span class="kw">then</span> <span class="fu">all</span> elements of ARRAY are shifted by SHIFT places. <span class="kw">If</span> rank is greater than one, <span class="kw">then</span> <span class="fu">all</span> complete rank one sections of ARRAY along the given <span class="dt">dimension</span> are shifted. Elements shifted out one <span class="kw">end</span> of each rank one section are shifted back in the other <span class="kw">end</span>.</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">Class:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    Transformational <span class="kw">function</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>Arguments:</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    ARRAY   Shall be an array of <span class="fu">any</span> <span class="dt">type</span>.</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    SHIFT   The <span class="dt">type</span> shall be <span class="dt">INTEGER</span>.</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">DIM</span> The <span class="dt">type</span> shall be <span class="dt">INTEGER</span>.</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>Notes:</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    ARRAY can also be UNSIGNED.</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="kw">Return</span> value:</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    Returns an array of same <span class="dt">type</span> and rank as the ARRAY argument.</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>Example:</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">program</span> test_cshift</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="dt">integer</span>, <span class="dt">dimension(3,3)</span> <span class="dt">::</span> a</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        a <span class="kw">=</span> <span class="fu">reshape</span>( <span class="kw">(/</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span> <span class="kw">/)</span>, <span class="kw">(/</span> <span class="dv">3</span>, <span class="dv">3</span> <span class="kw">/)</span>)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        <span class="fu">print</span> <span class="st">'(3i3)'</span>, a(<span class="dv">1</span>,:)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>        <span class="fu">print</span> <span class="st">'(3i3)'</span>, a(<span class="dv">2</span>,:)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>        <span class="fu">print</span> <span class="st">'(3i3)'</span>, a(<span class="dv">3</span>,:)    </span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        a <span class="kw">=</span> <span class="fu">cshift</span>(a, SHIFT<span class="kw">=(/</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="kw">-</span><span class="dv">1</span><span class="kw">/)</span>, <span class="bu">DIM</span><span class="kw">=</span><span class="dv">2</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>        <span class="fu">print</span> <span class="kw">*</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        <span class="fu">print</span> <span class="st">'(3i3)'</span>, a(<span class="dv">1</span>,:)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        <span class="fu">print</span> <span class="st">'(3i3)'</span>, a(<span class="dv">2</span>,:)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="fu">print</span> <span class="st">'(3i3)'</span>, a(<span class="dv">3</span>,:)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end program</span> test_cshift</span></code></pre>
+   </div>
+   <p>
+    This is awful: after reading the documentation, it’s still not clear
+what this function actually does. For example, I still don’t know what
+the result of <code>cshift((/1, 2, 3/), 1)</code> is. Is it
+<code>2 3 1</code> (left shift, like <a href="https://www.youtube.com/watch?v=UZmeDQL4LaE">std::rotate</a>) or
+is it <code>3 1 2</code> (right shift, like
+<code>numpy.roll</code>)?
+   </p>
+   <p>
+    Compare this to a snippet from the cppreference documentation for
+<code>std::rotate</code>
+   </p>
+   <div class="sourceCode" id="cb2">
+    <pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="op">)</span> Performs a left rotation on a range of elements<span class="op">.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>Specifically<span class="op">,</span> <span class="bu">std::</span>rotate swaps the elements in the range <span class="op">[</span>first<span class="op">,</span> last<span class="op">)</span> in such a way that the elements in <span class="op">[</span>first<span class="op">,</span> middle<span class="op">)</span> are placed after the elements in <span class="op">[</span>middle<span class="op">,</span> last<span class="op">)</span> <span class="cf">while</span> the orders of the elements in both ranges are preserved<span class="op">.</span></span></code></pre>
+   </div>
+   <p>
+    It even gives an example implementation to makes it clear what the
+functoin does
+   </p>
+   <pre><code>template&lt;class ForwardIt&gt;
+constexpr // since C++20
+ForwardIt rotate(ForwardIt first, ForwardIt middle, ForwardIt last)
+{
+    if (first == middle)
+        return last;
+
+    if (middle == last)
+        return first;
+
+    ForwardIt write = first;
+    ForwardIt next_read = first; // read position for when “read” hits “last”
+
+    for (ForwardIt read = middle; read != last; ++write, ++read)
+    {
+        if (write == next_read)
+            next_read = read; // track where “first” went
+        std::iter_swap(write, read);
+    }
+
+    // rotate the remaining sequence into place
+    rotate(write, next_read, last);
+    return write;
+}</code></pre>
+   <p>
+    It also gives example usage and output!
+   </p>
+   <div class="sourceCode" id="cb4">
+    <pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> print <span class="op">=</span> <span class="op">[](</span><span class="at">const</span> <span class="kw">auto</span> remark<span class="op">,</span> <span class="at">const</span> <span class="kw">auto</span><span class="op">&amp;</span> v<span class="op">)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> remark<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> n <span class="op">:</span> v<span class="op">)</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> n <span class="op">&lt;&lt;</span> <span class="ch">' '</span><span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="ch">'</span><span class="sc">\n</span><span class="ch">'</span><span class="op">;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v<span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">1</span><span class="op">};</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    print<span class="op">(</span><span class="st">"before sort:</span><span class="sc">\t\t</span><span class="st">"</span><span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">// insertion sort</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> i <span class="op">=</span> v<span class="op">.</span>begin<span class="op">();</span> i <span class="op">!=</span> v<span class="op">.</span>end<span class="op">();</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>rotate<span class="op">(</span><span class="bu">std::</span>upper_bound<span class="op">(</span>v<span class="op">.</span>begin<span class="op">(),</span> i<span class="op">,</span> <span class="op">*</span>i<span class="op">),</span> i<span class="op">,</span> i <span class="op">+</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    print<span class="op">(</span><span class="st">"after sort:</span><span class="sc">\t\t</span><span class="st">"</span><span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// simple rotation to the left</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>rotate<span class="op">(</span>v<span class="op">.</span>begin<span class="op">(),</span> v<span class="op">.</span>begin<span class="op">()</span> <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> v<span class="op">.</span>end<span class="op">());</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    print<span class="op">(</span><span class="st">"simple rotate left:</span><span class="sc">\t</span><span class="st">"</span><span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    <span class="co">// simple rotation to the right</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>rotate<span class="op">(</span>v<span class="op">.</span>rbegin<span class="op">(),</span> v<span class="op">.</span>rbegin<span class="op">()</span> <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> v<span class="op">.</span>rend<span class="op">());</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    print<span class="op">(</span><span class="st">"simple rotate right:</span><span class="sc">\t</span><span class="st">"</span><span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
+   </div>
+   <pre><code>before sort:        2 4 2 0 5 10 7 3 7 1
+after sort:     0 1 2 2 3 4 5 7 7 10
+simple rotate left: 1 2 2 3 4 5 7 7 10 0
+simple rotate right:    0 1 2 2 3 4 5 7 7 10</code></pre>
+   <p>
+    The CSHIFT documentation contains a 2-dimensional shift example (not
+simple!) and contains no output to explain what the code does.
+   </p>
+   <hr>
+   <p>
+    If it’s not clear I’m salty I guessed the wrong behaviour for
+CSHIFT
+   </p>
+  </main>
+ </body>
+</html>
