@@ -94,30 +94,32 @@ is it <code>3 1 2</code> (right shift, like
     It even gives an example implementation to makes it clear what the
 functoin does
    </p>
-   <pre><code>template&lt;class ForwardIt&gt;
-constexpr // since C++20
-ForwardIt rotate(ForwardIt first, ForwardIt middle, ForwardIt last)
-{
-    if (first == middle)
-        return last;
-
-    if (middle == last)
-        return first;
-
-    ForwardIt write = first;
-    ForwardIt next_read = first; // read position for when “read” hits “last”
-
-    for (ForwardIt read = middle; read != last; ++write, ++read)
-    {
-        if (write == next_read)
-            next_read = read; // track where “first” went
-        std::iter_swap(write, read);
-    }
-
-    // rotate the remaining sequence into place
-    rotate(write, next_read, last);
-    return write;
-}</code></pre>
+   <div class="sourceCode" id="cb3">
+    <pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> ForwardIt<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="co">// since C++20</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>ForwardIt rotate<span class="op">(</span>ForwardIt first<span class="op">,</span> ForwardIt middle<span class="op">,</span> ForwardIt last<span class="op">)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>first <span class="op">==</span> middle<span class="op">)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> last<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>middle <span class="op">==</span> last<span class="op">)</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> first<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    ForwardIt write <span class="op">=</span> first<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    ForwardIt next_read <span class="op">=</span> first<span class="op">;</span> <span class="co">// read position for when “read” hits “last”</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>ForwardIt read <span class="op">=</span> middle<span class="op">;</span> read <span class="op">!=</span> last<span class="op">;</span> <span class="op">++</span>write<span class="op">,</span> <span class="op">++</span>read<span class="op">)</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>write <span class="op">==</span> next_read<span class="op">)</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>            next_read <span class="op">=</span> read<span class="op">;</span> <span class="co">// track where “first” went</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>iter_swap<span class="op">(</span>write<span class="op">,</span> read<span class="op">);</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">// rotate the remaining sequence into place</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    rotate<span class="op">(</span>write<span class="op">,</span> next_read<span class="op">,</span> last<span class="op">);</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> write<span class="op">;</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre>
+   </div>
    <p>
     It also gives example usage and output!
    </p>
