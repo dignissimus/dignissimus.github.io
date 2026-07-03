@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/blog/pico.min.css">
+  <link rel="stylesheet" href="/blog/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+  <script defer="" src="/blog/js/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+  <script defer="" src="/blog/js/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <link rel="stylesheet" href="/blog/dracula.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/fortran.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/julia.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/haskell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/perl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/rust.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/lean.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/highlightjs-lean/dist/r.min.js"></script>
+  <script>
+   hljs.highlightAll();
+  </script>
+ </head>
+ <body>
+  <main>
+   <h1>
+    The heat equation and numerical stability
+   </h1>
+   <p>
+    <em>Status: WIP. I want to write about implicit schemes and
+Gauss-Seidel. I also want to introduce Gershgorin’s circle theorem for
+bounding the eigenvalues of a matrix and applying this to stability
+analysis</em>
+   </p>
+   <p>
+    <strong>1 July 2026</strong>
+   </p>
+   <hr>
+   <h2>
+    The heat equation, intuitively
+   </h2>
+   <p>
+    The heat equation describes how the distribution of heat evolves in a
+system over time. Intuitively, we can think of the evolution of heat as
+a local phenomenon where we can determine how the heat changes at a
+point by looking at the heat in the immediate surrounding of this
+point.
+   </p>
+   <p>
+    As an example we could imagine it’s <a href="https://en.wikipedia.org/wiki/2026_United_Kingdom_heatwaves">June
+2026 in the United Kingdom during an unexpected and very annoying
+heatwave</a> and you’re in a house that’s cool on the inside but it’s
+35°C outside. Suppose we open up the door, then we only need to look at
+the air immediately outside the house in order to work out how the heat
+at the door changes.
+   </p>
+   <p>
+    In this situation, the heat from outside enters the house which
+results in the warm outside air becoming slightly colder and the cool
+inside air becoming warmer. In general, we have the property that heat
+at a point tends towards the heat of its neighbours and this is one
+instance of the <a href="https://en.wikipedia.org/wiki/Second_law_of_thermodynamics">second
+law of thermodynamics</a>.
+   </p>
+   <p>
+    This is described by the following low-budget (no-budget?)
+illustration where there’s cooling pressure on the hot portion of the
+image and heating pressure on the cool portions of the image.
+   </p>
+   <p>
+    <img src="/blog/images/heat-equation.jpg">
+   </p>
+   <p>
+    As an equation we can think of this in terms of differences between
+the heat at neighbouring points. Let’s say we live in a discretised
+world where at every point \(x_i\) we have two immediate neighbours:
+\(x_{i - 1}\) to the left and \(x_{i + 1}\) to the right.
+   </p>
+   <p>
+    Let’s also imagine that time is discretised in this world so we have
+the heat at time \(t\) at a certain point \(i\) as \(u^{(t)}_i\) and the
+heat in the next time period being \(u^{(t + 1)}_i\). The question we
+want to answer is how heat evolves at a certain point over time, so we
+want to find \(u^{t + 1}_i\) given \(u^{t}_i\).
+   </p>
+   <p>
+    Earlier we said that a position gets warmer when it is colder than
+its neihgbours, and colder when it is warmer than its neighbours. If we
+first look at the difference between the heat at position \(i\) and its
+neighbour on the left \(i - 1\) we get this as an expression \(u^{(t)}_i
+- u^{(t)}_{i - 1}\)
+   </p>
+   <p>
+    When the position is hotter than its left neighbour and \(u^{(t)}_i
+&gt; u^{(t)}_{i - 1}\), this quantity is positive, and the change in
+heat at this position should be negative. When this position is cooler
+than its neighbour then this quantity is negative and the change in heat
+should be positive.
+   </p>
+   <p>
+    We have a similar situation for the right neighbour. That is, when
+the quantity \(u^{(t)}_i - u^{(t)}_{i + 1}\) is positive then this
+position is hotter than the right neighbour and temperature decreases.
+When it’s negative, the temperature increases.
+   </p>
+   <p>
+    If we have this change in temperature to be linear in these amounts
+then we get the expression for the temperature in the next state as \(
+u^{(t + 1)}_i = u^{(t)}_i + \kappa \left( \left( u^{(t)}_{i + 1} -
+u^{(t)}_i \right) - \left(u^{(t)}_i - u^{(t)}_{i-1} \right) \right)\)
+which we can notice as a second order difference, a difference of
+differences. This is unrelated to <a href="https://en.wikipedia.org/wiki/Difference_in_differences">differences
+in differences</a> from econometrics.
+   </p>
+   <p>
+    If we have the grid described by a continuous function and our grid
+is sufficiently fine then in the limit this second order difference
+becomes a second order spatial derivative, which we can denote as
+\(\frac{\partial^2 u}{\partial x^2} = \nabla^2 u = \triangle u\).
+Replacing our equation with a derivative gets us \( u^{(t + 1)}_i =
+u^{(t)}_i + \kappa \frac{\partial u}{\partial x}\).
+   </p>
+   <p>
+    In the limit of our time steps becoming more fine, we similarly get
+the temporal difference becoming a derivative with respect to time which
+allows us to write our expression for the change in heat as
+   </p>
+   <p>
+    \[ \frac{\partial u}{\partial t} = \triangle u \]
+   </p>
+   <p>
+    Which gives us the heat equation. We also have an alternative
+derivation using conservation of energy.
+   </p>
+   <p>
+    We can extend this model so that we can consider consider how heat
+diffuses over a 2 dimensional grid instead of a line of points. The
+details remain largely the same and this equation generalises to higher
+dimensions.
+   </p>
+   <h2>
+    Solving the heat equation numerically
+   </h2>
+   <p>
+    Often, we don’t know the spatial derivative, so when writing programs
+we stick to the discretised form of the equation where we use the finite
+difference formulation from earlier.
+   </p>
+   <p>
+    \[ u^{(t + 1)}_i = u^{(t)}_i + \kappa \left( \left( u^{(t)}_{i + 1} -
+u^{(t)}_i \right) - \left(u^{(t)}_i - u^{(t)}_{i-1} \right)
+\right)\]
+   </p>
+   <p>
+    This has the obvious code implementation where we iterate over all of
+our points in the grid, calculate the second differences then use our
+equation for \(u^{(t + 1)}_i\). This algorithm is called <a href="https://en.wikipedia.org/wiki/Euler_method">explicit euler</a> and
+it falls under a class of algorithms called “time stepping schemes”.
+Since we’re finding values of \(u^{(t)}_i\) by effectively stepping
+through time.
+   </p>
+   <p>
+    This scheme works but is unstable when our grid is too fine or
+high-res, or our timesteps are too big. If we want this scheme to be
+stable (we do), then the precise statement is that we need to have
+\(\frac{\kappa \Delta t}{\Delta x^2} \leq \frac{1}{2} \) where \(\Delta
+t\) corresponds to the size of our steps through time and \(\Delta x\)
+corresponds to how far apart our grid points are.
+   </p>
+   <p>
+    I’m going to walk through how we can show this statement, it’s
+similar in nature to the <a href="https://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition">CFL
+condition</a> which also gives bounds on the timestep size and grid
+discretisation required for stabiltiy.
+   </p>
+   <p>
+    We can create a vector \(u^{(t)}\) that represents the temperature
+\(u^{(t)}_i\) at a certain point in time, \(t\). Our formula for
+calculating \(u^{(t+1)}\) from \(u^{(t)}\) is linear in the entries of
+\(u^{(t)}\) so we have a matrix \(A\) that describes the transformation
+from the old timestep to the new timestep. We can write this as
+   </p>
+   <p>
+    \[u^{(t+1)} = Au^{(t)}\]
+   </p>
+   <p>
+    We can iterate this linear transformation to get the heat at an
+arbitrary point in time, which gives us an expression in terms of the
+matrix power \(A^n\)
+   </p>
+   <p>
+    \[u^{(n)} = A^n u^{(0)}\]
+   </p>
+   <h2>
+    Floating point error and numerical stability
+   </h2>
+   <p>
+    Since computers are finite and we don’t have infinite precision
+maths, we use <a href="https://en.wikipedia.org/wiki/Floating-point_arithmetic">floating
+point numbers</a> as approximations for the real numbers. So instead of
+storing \(\pi\), we store a finite approximation of pi. In C, the
+<code>M_PI</code> macro is defined as
+<code>3.14159265358979323846</code>.
+   </p>
+   <p>
+    Floating point also approximates most rational numbers and you can
+notice this when we try to evaluate \(0.1 + 0.2\) which gives us
+<code>0.30000000000000004</code> in Python.
+   </p>
+   <p>
+    The reason for this is that we can’t store any of \(\frac{1}{10}\),
+\(\frac{2}{10}\) or \(\frac{3}{10}\) exactly in floating point, this
+means we need to round them to the nearest representable number. Because
+of this, we incur <a href="https://en.wikipedia.org/wiki/Numerical_error">numerical error</a>
+after every floating point operation and for the specific case of
+<code>0.1 + 0.2</code> this error becomes noticeable enough that we can
+see the error after not so many significant digits.
+   </p>
+   <p>
+    We can see the floating point error associated with storing each
+number in Python by printing each number with high-precision
+   </p>
+   <div class="sourceCode" id="cb1">
+    <pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="fl">0.1</span><span class="sc">:.55f}</span><span class="ss">"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fl">0.1000000000000000055511151231257827021181583404541015625</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="fl">0.2</span><span class="sc">:.55f}</span><span class="ss">"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fl">0.2000000000000000111022302462515654042363166809082031250</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="fl">0.3</span><span class="sc">:.55f}</span><span class="ss">"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fl">0.2999999999999999888977697537484345957636833190917968750</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> </span></code></pre>
+   </div>
+   <p>
+    You can notice that none of the printed values are the same as the
+exact values. The name for the difference between the computed result
+and the actual result is called <a href="https://en.wikipedia.org/wiki/Round-off_error">roundoff error</a>
+and we can analyse the effect of floating-point roundouff error on the
+stability of our timestepping scheme.
+   </p>
+   <p>
+    Let’s suppose that our initial condition \(u^{(0)}\) is stored
+exactly, then we can look at the difference in the results from our
+algorithm when using actual numbers and the result that we get when
+using floating point numbers.
+   </p>
+   <p>
+    Let’s use \(v^(t)\) to denote the result of running our algorithm
+using an idealised, infinite precision arithmetic.
+   </p>
+   <p>
+    Our error \(\epsilon^{(t)}_i\) is now \(\epsilon_t = v^{(t)} -
+u^{(t)}\). We can rewrite \(v^{(t)}\) using the definition of our
+algorithm
+   </p>
+   <p>
+    \[ \begin{align*} v^{(t + 1)}_i &amp;= v^{(t)}_i + \kappa \left(
+\left( v^{(t)}_{i + 1} - v^{(t)}_i \right) - \left(v^{(t)}_i -
+v^{(t)}_{i-1} \right) \right) \\ &amp;= Av^{(t)} \end{align*} \]
+   </p>
+   <p>
+    We can also take into account floating point error that comes from
+the imprecision from our maths. So instead of having \(u^{(t + 1)} =
+Au^({t})\) we now have \(u^{(t+1)} = Au^({t}) + \eta^{(t + 1)}\)
+   </p>
+   <p>
+    Using this, our error at time \(t + 1\) becomes the following
+   </p>
+   <p>
+    \[ \begin{align*} \epsilon^{(t+1)} &amp;= v^{(t + 1)}_i - u^{(t +
+1)}_i \\ \epsilon^{(t+1)} &amp;= Av^{(t)}_i - \left(Au^{(t)}_i +
+\eta^{(t + 1)}\right) \\ \epsilon^{(t+1)} &amp;= A\left(v^{(t)}_i -
+u^{(t)}_i\right) - \eta^{(t + 1)} \\ \epsilon^{(t+1)} &amp;=
+A\epsilon^{(t)} - \eta^{(t + 1)} \\ \end{align*} \]
+   </p>
+   <p>
+    And we have the result that the error follows a recurrence relation
+very similar to the recurrence relation our algorithm implements. If the
+initial condition is stored precisely and \(\epsilon^{(0)} = 0\) then we
+get the following expression for theerror at time \(t\)
+   </p>
+   <p>
+    \[\epsilon^{(t)}=-\sum_{k=1}^{t}A^{t-k}\eta^{(k)}\]
+   </p>
+   <p>
+    We can bound the size of this error using the inequality \(|Av| \leq
+|A||v| \), where \(|\cdot|\) is <a href="https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FMatrix_norm%23Spectral_norm_%28p_%3D_2%29">a
+matrix norm</a> which quantifies the largest amount a matrix scales a
+vector. Once we do that, we get the following
+   </p>
+   <p>
+    \[ \begin{align*}
+\left|\epsilon^{(t)}\right|\le\sum_{k=1}^{t}\left|A\right|^{t-k}\left|\eta^{(k)}\right|
+\end{align*} \]
+   </p>
+   <p>
+    If our one-step floating point errors are bouded by \(\eta_{\max}\)
+then we get the following
+   </p>
+   <p>
+    \[ \begin{align*} \left|\epsilon^{(t)}\right| &amp;\le
+\eta_{\max}\sum_{k=0}^{t-1}\left|A\right|^k \\ &amp;\le
+t\eta_{\max}\left|A\right|^t \end{align*} \]
+   </p>
+   <p>
+    One thing to note is that this is the sum of a geometric series and
+if \(|A| \geq 1\) then this bound diverges exponentially as we increase
+\(t\). And if \(|A| &lt; 1\) then \(|A|^t\) decays exponentially and our
+error grows only linearly over time.
+   </p>
+   <p>
+    For this reason we can call our scheme stable if \(|A| &lt; 1\) and
+unstable otherwise.
+   </p>
+   <hr>
+   <p>
+    Planned: Explicit euler region of stability, gershgorin circle
+theorem, implicit schemes, Gauss-Seidel
+   </p>
+   <hr>
+   <h1>
+    References
+   </h1>
+   <p>
+    [1]: LeVeque, Randall J. Finite difference methods for ordinary and
+partial differential equations
+   </p>
+   <p>
+    [2]: Trefethen, Lloyd N., and David Bau. Numerical linear
+algebra.
+   </p>
+  </main>
+ </body>
+</html>
