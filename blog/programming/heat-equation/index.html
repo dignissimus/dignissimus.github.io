@@ -89,10 +89,9 @@ want to find \(u^{t + 1}_i\) given \(u^{t}_i\).
    </p>
    <p>
     Earlier we said that a position gets warmer when it is colder than
-its neihgbours, and colder when it is warmer than its neighbours. If we
-first look at the difference between the heat at position \(i\) and its
-neighbour on the left \(i - 1\) we get this as an expression \(u^{(t)}_i
-- u^{(t)}_{i - 1}\)
+its neighbours. If we first look at the difference between the heat at
+position \(i\) and its neighbour on the left \(i - 1\) we get this as an
+expression \(u^{(t)}_i - u^{(t)}_{i - 1}\)
    </p>
    <p>
     When the position is hotter than its left neighbour and \(u^{(t)}_i
@@ -137,9 +136,9 @@ allows us to write our expression for the change in heat as
 derivation using conservation of energy.
    </p>
    <p>
-    We can extend this model so that we can consider consider how heat
-diffuses over a 2 dimensional grid instead of a line of points. The
-details remain largely the same and this equation generalises to higher
+    We can extend this model so that we can consider how heat diffuses
+over a 2 dimensional grid instead of a line of points. The details
+remain largely the same and this equation generalises to higher
 dimensions.
    </p>
    <h2>
@@ -247,7 +246,7 @@ algorithm when using actual numbers and the result that we get when
 using floating point numbers.
    </p>
    <p>
-    Let’s use \(v^(t)\) to denote the result of running our algorithm
+    Let’s use \(v^{(t)}\) to denote the result of running our algorithm
 using an idealised, infinite precision arithmetic.
    </p>
    <p>
@@ -302,14 +301,19 @@ then we get the following
    </p>
    <p>
     \[ \begin{align*} \left|\epsilon^{(t)}\right| &amp;\le
-\eta_{\max}\sum_{k=0}^{t-1}\left|A\right|^k \\ &amp;\le
-t\eta_{\max}\left|A\right|^t \end{align*} \]
+\eta_{\max}\sum_{k=0}^{t-1}\left|A\right|^k \\ \end{align*} \]
    </p>
    <p>
     One thing to note is that this is the sum of a geometric series and
 if \(|A| \geq 1\) then this bound diverges exponentially as we increase
 \(t\). And if \(|A| &lt; 1\) then \(|A|^t\) decays exponentially and our
 error grows only linearly over time.
+   </p>
+   <p>
+    \[ \begin{align*} \left|\epsilon^{(t)}\right| &amp;\le
+\eta_{\max}\sum_{k=0}^{t-1}\left|A\right|^k \\ &amp;\le
+\eta_{\max}\sum_{k=0}^{t-1} 1^k\\ &amp;\le t\eta_{\max} \end{align*}
+\]
    </p>
    <p>
     For this reason we can call our scheme stable if \(|A| &lt; 1\) and
