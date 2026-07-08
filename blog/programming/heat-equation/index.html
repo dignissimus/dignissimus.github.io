@@ -306,8 +306,9 @@ then we get the following
    <p>
     One thing to note is that this is the sum of a geometric series and
 if \(|A| \geq 1\) then this bound diverges exponentially as we increase
-\(t\). And if \(|A| &lt; 1\) then \(|A|^t\) decays exponentially and our
-error grows only linearly over time.
+\(t\). If \(|A| &lt; 1\) then \(|A|^t\) decays exponentially and our
+error grows only linearly over time, which we see after the following
+simpliciation
    </p>
    <p>
     \[ \begin{align*} \left|\epsilon^{(t)}\right| &amp;\le
@@ -318,6 +319,116 @@ error grows only linearly over time.
    <p>
     For this reason we can call our scheme stable if \(|A| &lt; 1\) and
 unstable otherwise.
+   </p>
+   <p>
+    That being said, it’s not really clear what \(|A|\) is or how we find
+this out. We haven’t even explicitly defined \(A\) yet or what the
+matrix norm \(|\cdot|\) is.
+   </p>
+   <p>
+    Earlier I mentioned that the matrix norm measures the largest amount
+that the matrix scales a vector by. We can be more precise and say that
+we’re looking at the ratio between the <a href="https://en.wikipedia.org/wiki/Norm_%28mathematics%29%23Euclidean_norm">magnitude</a>
+of a vector and the result after multiplying by \(A\). So we have that
+as \(|A| = \max_x \frac{|Ax|}{|x|}\).
+   </p>
+   <p>
+    Since we want to find the value of \(|A|\), it helps to know what
+\(A\) is. If we think about \(A\) in terms of a linear map going from
+our old 1-dimensional grid to the 1-dimensional grid in the new
+timestep, then each row of \(A\) corresponds to a point in the new
+1-dimensional grid and the entries in this row describe the linear
+combination of the points in the old 1-dimensional grid.
+   </p>
+   <p>
+    Since each point in the new grid only depends on three values from
+the old grid (the point itself, its left neighbout and its right
+neighbour) every row in our matrix corresponds to 3 values.
+   </p>
+   <p>
+    Technically the boundaries only use 2 values and if we were being
+more rigorous about this, we could explicitly use a scheme to fill in
+the values for their missing neighbours. Of these schemes, we have the
+<a href="https://en.wikipedia.org/wiki/Dirichlet_boundary_condition">Dirichlet</a>
+scheme which sets them to zero and the <a href="https://en.wikipedia.org/wiki/Neumann_boundary_condition">Neumann</a>
+scheme which sets them the same value as their neighbour.
+   </p>
+   <p>
+    Earlier we established that the equation for the value of a point in
+the new timestep has the following form \[u^{(t + 1)}_i = u^{(t)}_i +
+\kappa \left( \left( u^{(t)}_{i + 1} - u^{(t)}_i \right) -
+\left(u^{(t)}_i - u^{(t)}_{i-1} \right) \right)\]
+   </p>
+   <p>
+    We can rewrite this as an explicit linear combination of the values
+at the neighbouring points
+   </p>
+   <p>
+    \[u^{(t + 1)}_i = \kappa u^{(t)}_{i-1} + (1 - 2\kappa) u^{(t)}_i +
+\kappa u^{(t)}_{i+1}\]
+   </p>
+   <p>
+    This makes it clearer what the strucure of the matrix \(A\) is. When
+thinking about matrices as linear operations described with respect to a
+fixed basis, each row represents an output and each column represents an
+input. Our matrix \(A\) has \(n\) inputs which represent the points in
+the old timestep, and \(n\) outputs which represent the points in the
+new timestep. This means \(A\) is an \(n \times n\) matrix.
+   </p>
+   <p>
+    The values in each of the rows describe the coefficients of the
+linear combination corresponding to each output. So since the \(u^{(t +
+1)}_i\) has coefficients \(1\), \(1 - 2\kappa\) and \(1\) corresponding
+to positions \(i - 1\), \(i\), and \(i + 1\) respectively, row \(i\)
+will have entries \(1\), \(1 - 2\kappa\) and \(1\) in columns \(i - 1\),
+\(i\), \(i + 1\).
+   </p>
+   <p>
+    More explicitly, the matrix looks like the following
+   </p>
+   <p>
+    \[ A = \begin{bmatrix} 1 - 2\kappa &amp; \kappa &amp; 0 &amp; \cdots
+&amp; 0 \\ \kappa &amp; 1 - 2\kappa &amp; \kappa &amp; \cdots &amp; 0 \\
+0 &amp; \kappa &amp; 1 - 2\kappa &amp; \cdots &amp; 0 \\ \vdots &amp;
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\ 0 &amp; 0 &amp; 0 &amp;
+\cdots &amp; 1 - 2\kappa \end{bmatrix} \]
+   </p>
+   <p>
+    We want to find the matrix norm \(|A|\) which we defined earlier as
+being the largest amount that a vector is scaled by, and we wrote that
+as \[|A| = \max_x \frac{|Ax|}{|x|}\]
+   </p>
+   <p>
+    We can simplify this a bit by only considering unit vectors. This
+works since linearity ensures us that scaling an input vector by 2 also
+scales the magnitude of the output vector by 2. Since both the input and
+output are sclaed by the same amount, the scaling factor for \(A\),
+being a ratio of magnitudes, remains unchanged.
+   </p>
+   <p>
+    More formally, we have the following algebraic derivation
+   </p>
+   <p>
+    \[ \begin{align*} \|A\| &amp;= \max_x \frac{|Ax|}{|x|} \\ &amp;=
+\max_x \left|A \frac{x}{|x|}\right| \\ &amp;= \max_{y = \frac{x}{|x|}}
+|A y| \\ &amp;= \max_{\|y\| = 1} |A y| \\ \end{align*} \]
+   </p>
+   <p>
+    One thing we can note about our matrix \(A\) is that all of its
+entries are real (i.e. not complex) and it’s <a href="https://en.wikipedia.org/wiki/Symmetric_matrix">symmetric</a>,
+meaning \(A^\top = A\).
+   </p>
+   <p>
+    This means we can apply the <a href="https://en.wikipedia.org/wiki/Spectral_theorem">spectral
+theorem</a> to state that it can be decomposed into the product of 3
+matrices \(Q\Lambda Q^*\). Where \(\Lambda\) is a diagonal matrix and
+\(Q\) is an <a href="https://en.wikipedia.org/wiki/Orthogonal_matrix">orthogonal
+matrix</a>.
+   </p>
+   <p>
+    This helps us because orthogonal matrices don’t change distances or
+scale. So \(|Q\Lambda Q^*|\) has the same value as \(|\Lambda|\) and it
+is much easier to find the scaling factor of diagonal matrices.
    </p>
    <hr>
    <p>
