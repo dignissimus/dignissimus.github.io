@@ -431,8 +431,8 @@ scale. So \(|Q\Lambda Q^*|\) has the same value as \(|\Lambda|\) and it
 is much easier to find the scaling factor of diagonal matrices.
    </p>
    <p>
-    We don’t yet know what \(\Lambda\) looks like, but for now look at
-what we can learn about \(A\) if we did have \(\Lambda\).
+    We don’t yet know what \(\Lambda\) looks like, but we can first look
+at what we can learn about \(A\) if we did have \(\Lambda\).
    </p>
    <p>
     We know \(|A| = |Q\Lambda Q^*| = |\Lambda|\) so we can focus our
@@ -440,6 +440,73 @@ efforts into finding out \(|\Lambda|\) for diagonal \(\Lambda\). As
 mentioned earlier, we only have to consider how \(\Lambda\) scales unit
 vectors so this simplifies our investigation even further to how a
 diagonal matrix transforms the unit circle.
+   </p>
+   <p>
+    Diagonal matrices only have entries on their diagonal and have the
+following form when written down
+   </p>
+   <p>
+    \[ \begin{bmatrix} \lambda_1 &amp; 0 &amp; \cdots &amp; 0 \\ 0 &amp;
+\lambda_2 &amp; \cdots &amp; 0 \\ \vdots &amp; \vdots &amp; \ddots &amp;
+\vdots \\ 0 &amp; 0 &amp; \cdots &amp; \lambda_n \end{bmatrix} \]
+   </p>
+   <p>
+    From reading the matrix, we learn that multiplying by a diagonal
+matrix means each element in the output vector only depends on the same
+element in the input vector. And the \(i\)th output value is the input
+value scaled by \(\lambda_i\).
+   </p>
+   <p>
+    Geometrically, this corresponds to stretching each axis by
+\(\lambda_i\) and visually this transforms the circle by scaling it
+across the x and y axes
+   </p>
+   <p>
+    <img src="/blog/images/diagonal-matrix.jpg">
+   </p>
+   <p>
+    If our matrix wasn’t diagonal we’d stretch the unit circle along
+different axes that aren’t aligned with the standard x and y axes. This
+transforms the circle by first scaling across the x and y axes then
+rotating the circle. This geometric intuition becomes useful when
+proving results about <a href="https://en.wikipedia.org/wiki/Singular_value_decomposition#Based_on_variational_characterization">Singular
+Value Decomposition</a>.
+   </p>
+   <p>
+    <img src="/blog/images/not-diagonal.jpg">
+   </p>
+   <p>
+    It’s not hard to show that, for diagonal 2x2 matrices, the 2d vector
+that’s scaled the most is one of the unit vectors aligned with the x and
+y coordinates. You get this by writing unit vectors as \((\cos \theta,
+\sin \theta)\). In this case the resulting vector is \((\lambda_1 \cos
+\theta, \lambda_2\sin \theta)\) then applying some trigonometric
+identities and working by cases on whether \(\lambda_1 &lt;
+\lambda_2\).
+   </p>
+   <p>
+    In higher dimensions we have a similar result by treating it as a
+simple optimisation problem where the magnitude of the new vector is
+\(\sqrt{\lambda_1^2 x_1^2 + \lambda_2^2 x_2^2 + \cdots + \lambda_n^2
+x_n^2}\). When we do this, we find that the largest scale factor is the
+largest diagonal entry in the matrix. Which tells us that the matrix
+norm is \( |\Lambda | = \max_{i} \lambda_i = \lambda_{\max}\)
+   </p>
+   <p>
+    So for diagonal matrices, we can find the scale factor by finding the
+largest number on the diagonal. The simplicity of this process makes
+this really good for us, but we don’t know what \(\Lambda\) is yet which
+means we can’t use this just yet.
+   </p>
+   <p>
+    In general, finding \(\Lambda\) is hard and the process of finding
+the \( \lambda_i \) is called <a href="https://en.wikipedia.org/wiki/Diagonalizable_matrix#Diagonalization">diagonalisation</a>
+   </p>
+   <p>
+    But we have methods to analytically bound the value of
+\(\lambda_{\max}\) that are similarly easy to use. One of these methods
+uses the <a href="https://en.wikipedia.org/wiki/Gershgorin_circle_theorem">Gershgorin
+circle theorem</a> which I’ll walk through next.
    </p>
    <hr>
    <p>
